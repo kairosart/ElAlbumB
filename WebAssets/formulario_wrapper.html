@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>El Álbum B - Comparte tus fotos</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #fcfcfc;
+    }
+
+    #frameFormulario {
+      display: block;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh; /* mejor soporte en móviles con barra de navegador dinámica */
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!--
+    IMPORTANTE: cambia el valor de CODIGO_EVENTO más abajo por el código real
+    (ej: EVENTO-8662F242), o bien pásalo como parámetro en la URL de esta
+    misma página: tuenlace.netlify.app/?codigo=EVENTO-8662F242
+    y el script de abajo lo cogerá automáticamente.
+  -->
+
+  <iframe id="frameFormulario" allow="clipboard-write"></iframe>
+
+  <script>
+    const urlBase = "https://script.google.com/macros/s/AKfycbzQfOU6rwrOUa8Q-kd-tSVDflj0jZgITJYsjUm60GFvp1X2_OeWS1WShrRSP_Z_4hhhuw/exec";
+
+    // Cogemos el código de evento de la URL de esta página (?codigo=XXXX)
+    // y si no viene, usamos uno por defecto (opcional, cámbialo si quieres).
+    const params = new URLSearchParams(window.location.search);
+    const codigo = params.get('codigo') || params.get('CODIGO') || "";
+
+    const urlFinal = codigo
+      ? urlBase + "?codigo=" + encodeURIComponent(codigo)
+      : urlBase;
+
+    document.getElementById('frameFormulario').src = urlFinal;
+  </script>
+
+</body>
+</html>

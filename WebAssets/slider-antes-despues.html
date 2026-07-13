@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Antes y Después</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f5f5f5; }
+
+  .slider-wrap {
+    position: relative;
+    width: 90vw;
+    max-width: 800px;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    cursor: col-resize;
+    user-select: none;
+  }
+
+  .img-before, .img-after {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 70vh;
+    object-fit: cover;
+  }
+
+  /* ---- CAMBIA ESTAS DOS URLs POR TUS FOTOS ---- */
+  .img-before { content: url("https://drive.google.com/file/d/1R5MdrmRvNYakmnzNDW9eDgCyeVyXF3jF/view?usp=drive_link"); }
+  .img-after  { content: url("https://drive.google.com/file/d/1AVz2RakHu1qhNG3k8tEHVRhynNoBG_U2/view?usp=drive_link"); }
+
+  .after-wrap {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    overflow: hidden;
+    width: 50%;
+  }
+  .after-wrap .img-after {
+    width: 90vw;
+    max-width: 800px;
+    height: auto;
+    max-height: 70vh;
+    object-fit: cover;
+  }
+
+  .divider {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 3px;
+    height: 100%;
+    background: #ffffff;
+    cursor: col-resize;
+  }
+  .handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .handle svg { width: 22px; height: 22px; stroke: #444; fill: none; stroke-width: 2; }
+
+  .label {
+    position: absolute;
+    top: 14px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+  }
+  .label-antes {
+    right: 14px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+  }
+  .label-despues {
+    left: 14px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+  }
+
+  .hint {
+    margin-top: 14px;
+    font-size: 13px;
+    color: #888;
+  }
+</style>
+</head>
+<body>
+
+<div class="slider-wrap" id="wrap">
+
+  <!-- IMAGEN ANTES (fondo) -->
+  <img class="img-before" src="AQUI_URL_FOTO_ANTES.jpg" alt="Antes" draggable="false">
+
+  <!-- IMAGEN DESPUÉS (encima, recortada) -->
+  <div class="after-wrap" id="afterWrap">
+    <img class="img-after" src="AQUI_URL_FOTO_DESPUES.jpg" alt="Después" draggable="false">
+  </div>
+
+  <!-- DIVISOR -->
+  <div class="divider" id="divider">
+    <div class="handle">
+      <svg viewBox="0 0 24 24">
+        <polyline points="9 18 3 12 9 6"></polyline>
+        <polyline points="15 6 21 12 15 18"></polyline>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ETIQUETAS -->
+  <span class="label label-antes">ANTES</span>
+  <span class="label label-despues">DESPUÉS</span>
+
+</div>
+
+<p class="hint">← Arrastra para comparar →</p>
+
+<script>
+  const wrap = document.getElementById('wrap');
+  const afterWrap = document.getElementById('afterWrap');
+  const divider = document.getElementById('divider');
+  let active = false;
+
+  function move(clientX) {
+    const rect = wrap.getBoundingClientRect();
+    let pct = (clientX - rect.left) / rect.width;
+    pct = Math.min(Math.max(pct, 0.02), 0.98);
+    const val = (pct * 100).toFixed(2) + '%';
+    afterWrap.style.width = val;
+    divider.style.left = val;
+  }
+
+  wrap.addEventListener('mousedown', e => { active = true; move(e.clientX); });
+  window.addEventListener('mousemove', e => { if (active) move(e.clientX); });
+  window.addEventListener('mouseup', () => { active = false; });
+
+  wrap.addEventListener('touchstart', e => { active = true; move(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener('touchmove', e => { if (active) move(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener('touchend', () => { active = false; });
+</script>
+</body>
+</html>
