@@ -4,7 +4,7 @@
 // =================================================================================
 
 const CARPETA_RAIZ_ID = "17aA-10hZDrc4RtnDaLZRTnEJBXw92YKe";
-const MODELO = "gemini-2.5-flash"; 
+const MODELO = "gemini-2.5-flash-image"; 
 const TELEFONO_BIZUM = "634404631";
 
 // 🌐 URL Base del despliegue de tu aplicación para invitados (¡CORREGIDO: YA NO ESTÁ COMENTADO!)
@@ -112,6 +112,11 @@ function mejorarFotoBoda(e) {
 }
 
 function enviarPeticionBizumEvento(e) {
+  // ESCUDO: Solo se ejecuta si viene de la pestaña correcta
+  const sheet = e.range.getSheet();
+  if (sheet.getName().trim().toUpperCase() !== "ALBUM_B_EVENTOS") {
+    return; // Si no es la pestaña de eventos, no hace nada
+  }
   try {
     const sheet = e.range.getSheet();
     const fila = e.range.getRow();
@@ -315,58 +320,173 @@ function procesarPedidosPorPack(config) {
 // =================================================================================
 
 function ejecutarReveladoGemini(sheet, filaIndex, emailCliente, estiloElegido, fileIdsRaw) {
-  try {
-    if (typeof fileIdsRaw === "string" && (fileIdsRaw.includes("_") || fileIdsRaw.startsWith("EVT-"))) return null;
+  const nombrePestana = sheet.getName().trim().toUpperCase();
+  // Col H (8) = Estado en PACK EXPRESS | Col F (6) = Estado en PRUEBA GRATIS / Form responses
+  const colEstado = (nombrePestana === "PACK EXPRESS") ? 8 : 6;
 
+  try {
     let fileIds = Array.isArray(fileIdsRaw) ? fileIdsRaw : (fileIdsRaw ? fileIdsRaw.toString().split(",") : []);
+    
+    // Extraemos los IDs de Drive limpiamente sin que los guiones bajos del ID bucleen o rompan el script
     fileIds = fileIds.map(id => extraerIdDrive(id.trim())).filter(id => id !== "");
 
-    if (!fileIds.length) { sheet.getRange(filaIndex, 8).setValue("Error: Sin Fotos"); return null; }
-
-    let carpetaRaiz = DriveApp.getFolderById(CARPETA_RAIZ_ID.trim());
-    let carpetaCliente = carpetaRaiz.getFoldersByName(emailCliente).hasNext() ? carpetaRaiz.getFoldersByName(emailCliente).next() : carpetaRaiz.createFolder(emailCliente);
-    carpetaCliente.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-
-    const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-    if (!apiKey) { sheet.getRange(filaIndex, 8).setValue("Error Gemini"); return null; }
-
-    let promptFinal = `Mejora esta foto: ${ESTILOS_PROMPT[estiloElegido] || ESTILOS_PROMPT["Cinematic Drama"]}.`;
-    if (sheet.getName().trim().toUpperCase() === "PRUEBA GRATIS") {
-      promptFinal += ` CRÍTICO: Añade una marca de agua translúcida distribuida oblicuamente con el texto exacto: "EL ALBUM B - PRUEBA GRATIS".`;
+    if (!fileIds.length) {
+      console.error(`❌ No se encontraron IDs de fotos válidos en la fila ${filaIndex}`);
+      sheet.getRange(filaIndex, colEstado).setValue("Error: Sin Fotos");
+      return null;
     }
 
+    if (!estiloElegido || !ESTILOS_PROMPT[estiloElegido]) {
+      estiloElegido = "Cinematic Drama";
+    }
+
+    let carpetaRaiz = DriveApp.getFolderById(CARPETA_RAIZ_ID.trim());
+    let carpetaCliente;
+    const carpetasExistentes = carpetaRaiz.getFoldersByName(emailCliente);
+    
+    if (carpetasExistentes.hasNext()) {
+      carpetaCliente = carpetasExistentes.next();
+    } else {
+      carpetaCliente = carpetaRaiz.createFolder(emailCliente);
+      carpetaCliente.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    }
+
+    const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+    if (!apiKey) {
+      console.error("🔴 ERROR: No existe la propiedad 'GEMINI_API_KEY' en la configuración del script.");
+      sheet.getRange(filaIndex, colEstado).setValue("Error Gemini");
+      return null;
+    }
+
+    const BlackboxPrompt = ESTILOS_PROMPT[estiloElegido];
+    
+    let promptFinal = `Mejora esta foto de boda: ${BlackboxPrompt}. Devuelve la imagen editada correspondiente.`;
+    
+    if (nombrePestana === "PRUEBA GRATIS") {
+      promptFinal += ` CRÍTICO: Añade obligatoriamente una marca de agua de texto distribuida en un patrón de varias líneas diagonales y paralelas repetidas de forma oblicua por toda la superficie de la imagen. Cada línea debe mostrar de forma idéntica, nítida y perfectamente deletreada el siguiente texto exacto en letras MAYÚSCULAS y SIN ACENTOS: "EL ALBUM B - PRUEBA GRATIS". Asegúrate de que los caracteres estén bien impresos en tipografía clara y sin deformaciones. El patrón de líneas debe ser translúcido y sutil pero perfectamente legible sobre la fotografía para proteger los derechos de autor.`;
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${apiKey}`;
+
     let fotosOk = 0;
+    let fotosError = 0;
+
     for (let i = 0; i < fileIds.length; i++) {
+      const fileId = fileIds[i];
       try {
-        const archivoOriginal = DriveApp.getFileById(fileIds[i]);
+        const archivoOriginal = DriveApp.getFileById(fileId);
         const blob = archivoOriginal.getBlob();
         const base64Image = Utilities.base64Encode(blob.getBytes());
+        const mimeType = blob.getContentType();
 
-        const response = UrlFetchApp.fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${apiKey}`, {
-          method: "post", contentType: "application/json",
-          payload: JSON.stringify({ contents: [{ parts: [{ text: promptFinal }, { inlineData: { mimeType: blob.getContentType(), data: base64Image } }] }] }),
+        const payload = {
+          contents: [{
+            parts: [
+              { text: promptFinal },
+              { inlineData: { mimeType: mimeType, data: base64Image } }
+            ]
+          }],
+          generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+          safetySettings: [
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" }
+          ]
+        };
+
+        const options = {
+          method: "post",
+          contentType: "application/json",
+          payload: JSON.stringify(payload),
           muteHttpExceptions: true
-        });
+        };
 
-        if (JSON.parse(response.getContentText()).candidates) {
-          carpetaCliente.createFile(blob.setName(`${estiloElegido.replace(/\s+/g, '_')}_${i + 1}_${archivoOriginal.getName()}`.replace("Kairos Art", "elAlumB")));
-          fotosOk++;
+        let json;
+        let intentos = 0;
+        const MAX_INTENTOS = 3;
+        let llamadaExitosa = false;
+
+        while (intentos < MAX_INTENTOS && !llamadaExitosa) {
+          const response = UrlFetchApp.fetch(url, options);
+          json = JSON.parse(response.getContentText());
+
+          if (json.error && (json.error.code === 503 || json.error.code === 429)) {
+            intentos++;
+            Utilities.sleep(intentos * 4000);
+          } else {
+            llamadaExitosa = true;
+          }
         }
+
+        if (json.error) {
+          console.error(`🔴 ERROR DE API GEMINI EN FOTO ${i+1}: ` + JSON.stringify(json.error));
+          fotosError++;
+          continue;
+        }
+
+        const parts = json.candidates && json.candidates[0].content.parts;
+        const imagePart = parts ? parts.find(p => p.inlineData) : null;
+
+        if (imagePart) {
+          const imageData = imagePart.inlineData;
+          const nombreBase = `${estiloElegido.replace(/\s+/g, '_')}_${i + 1}_${archivoOriginal.getName()}`;
+          const nombreModificado = nombreBase.replace("Kairos Art", "elAlumB");
+
+          const imagenMejoradaBlob = Utilities.newBlob(
+            Utilities.base64Decode(imageData.data),
+            imageData.mimeType,
+            nombreModificado
+          );
+          carpetaCliente.createFile(imagenMejoradaBlob);
+          fotosOk++;
+          console.log(`✅ Foto ${i+1} procesada y guardada con éxito por la IA.`);
+        } else {
+          console.error(`🔴 DETALLE: Gemini respondió con texto pero NO generó una imagen.`);
+          if (parts && parts[0] && parts[0].text) {
+            console.warn(`💬 Mensaje de texto devuelto por Gemini: "${parts[0].text}"`);
+          }
+          fotosError++;
+        }
+
         if (i < fileIds.length - 1) Utilities.sleep(2000);
-      } catch (e) { console.error(e); }
+
+      } catch (err) {
+        console.error(`🔴 ERROR PROCESANDO FOTO INDIVIDUAL ${i+1}: ` + err.toString());
+        fotosError++;
+      }
     }
 
     if (fotosOk > 0) {
       const urlCarpeta = carpetaCliente.getUrl();
-      if (sheet.getName().trim().toUpperCase() === "PACK EXPRESS") {
-        GmailApp.sendEmail(emailCliente, "✨ ¡Tu Galería Express está lista! - El Álbum B", "", { htmlBody: `<p>Tus fotos están listas: <a href="${urlCarpeta}">Ver Carpeta</a></p>` });
-        sheet.getRange(filaIndex, 8).setValue("Entregado");
+      
+      if (nombrePestana === "PACK EXPRESS") {
+        const asuntoEntrega = "✨ ¡Tu Galería Express está lista! - El Álbum B";
+        const cuerpoEntrega = `
+          <p>¡Buenas noticias! Tu pago ha sido verificado y tus fotos ya han salido de la mesa de revelado.</p>
+          <p>Puedes verlas y descargarlas a máxima calidad en tu carpeta personalizada de Drive de El Álbum B:</p>
+          <p><a href="${urlCarpeta}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">👉 Ver Mis Fotos Editadas</a></p>
+          <p>⚠️ <b>Importante:</b> Por motivos de privacidad y almacenamiento, esta carpeta se eliminará automáticamente en <b>15 días</b>. Asegúrate de guardarlas antes de esa fecha.</p>
+          <p>¡Muchísimas gracias por confiar en El Álbum B!</p>
+        `;
+        GmailApp.sendEmail(emailCliente, asuntoEntrega, "", { htmlBody: cuerpoEntrega });
+        sheet.getRange(filaIndex, colEstado).setValue("Entregado");
+      } else if (nombrePestana === "PRUEBA GRATIS") {
+        sheet.getRange(filaIndex, colEstado).setValue("Procesado IA");
       }
       return urlCarpeta;
+    } else {
+      sheet.getRange(filaIndex, colEstado).setValue("Error Gemini");
+      return null;
     }
-    sheet.getRange(filaIndex, 8).setValue("Error Gemini"); return null;
-  } catch (error) { sheet.getRange(filaIndex, 8).setValue("Error Crítico"); return null; }
+
+  } catch (error) {
+    console.error("🔴 ERROR CRÍTICO EN MOTOR: " + error.toString());
+    sheet.getRange(filaIndex, colEstado).setValue("Error Crítico");
+    return null;
+  }
 }
+
 
 // =================================================================================
 // PROMO: MOTOR PARA 1 SOLA FOTO GRATIS (FORMULARIO PRUEBA GRATIS)
@@ -497,7 +617,30 @@ function enviarCorreoBloqueado(emailDestinatario) {
   GmailApp.sendEmail(emailDestinatario, asunto, "", { htmlBody: cuerpoHTML });
 }
 
+/**
+ * Función para limpiar automáticamente los registros bloqueados de la prueba gratis.
+ * Se ejecutará cada hora mediante un disparador de tiempo.
+ */
+function limpiarRegistrosBloqueadosPruebaGratis() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("PRUEBA GRATIS");
+  
+  if (!sheet) return; // Si no existe la pestaña, no hacemos nada
 
+  const datos = sheet.getDataRange().getValues();
+  // El estado está en la columna F, que es el índice 5 (0=A, 1=B, 2=C, 3=D, 4=E, 5=F)
+  const COL_ESTADO = 5; 
+  
+  // Recorremos las filas desde abajo hacia arriba para poder borrar sin alterar los índices de las filas superiores
+  for (let i = datos.length - 1; i >= 1; i--) {
+    const estado = datos[i][COL_ESTADO] ? datos[i][COL_ESTADO].toString().trim() : "";
+    
+    if (estado === "Bloqueado: Ya pidió prueba") {
+      sheet.deleteRow(i + 1); // deleteRow es 1-indexed (la fila 1 es la 1)
+      console.log(`🧹 Registro bloqueado eliminado en la fila ${i + 1}`);
+    }
+  }
+}
 
 
 // =================================================================================

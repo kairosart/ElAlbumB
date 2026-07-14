@@ -159,3 +159,20 @@ function test8_entregarAlbumAlCliente() {
   // Y revisa tu bandeja de entrada (o Enviados de la cuenta del script):
   // debería haber llegado el email con el enlace.
 }
+
+
+
+// Función para hacer una prueba manual real desde el editor de la PRUEBA GRATIS
+function PROBAR_PruebaGratis_Manual() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("PRUEBA GRATIS");
+  
+  // 1. Leemos los datos de prueba reales de la fila 2 de tu hoja
+  const filaIndex = 2; 
+  const emailCliente = sheet.getRange(filaIndex, 2).getValue(); // Columna B (Email)
+  const estiloElegido = sheet.getRange(filaIndex, 3).getValue(); // Columna C (Estilo)
+  const fileIdsRaw = sheet.getRange(filaIndex, 5).getValue(); // Columna E (Foto)
+  console.log(`🧪 Iniciando Prueba Manual para: ${emailCliente} | Estilo: ${estiloElegido} | Foto: ${fileIdsRaw}`);
+
+  // 2. Ejecutamos directamente el revelado pasándole los parámetros correctos
+  ejecutarReveladoGemini(sheet, filaIndex, emailCliente, estiloElegido, fileIdsRaw);
+}
