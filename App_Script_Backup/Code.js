@@ -360,7 +360,7 @@ function ejecutarReveladoGemini(sheet, filaIndex, emailCliente, estiloElegido, f
 
     const BlackboxPrompt = ESTILOS_PROMPT[estiloElegido];
     
-    let promptFinal = `Mejora esta foto de boda: ${BlackboxPrompt}. Devuelve la imagen editada correspondiente.`;
+    let promptFinal = `Mejora esta foto: ${BlackboxPrompt}. Devuelve la imagen editada correspondiente.`;
     
     if (nombrePestana === "PRUEBA GRATIS") {
       promptFinal += ` CRÍTICO: Añade obligatoriamente una marca de agua de texto distribuida en un patrón de varias líneas diagonales y paralelas repetidas de forma oblicua por toda la superficie de la imagen. Cada línea debe mostrar de forma idéntica, nítida y perfectamente deletreada el siguiente texto exacto en letras MAYÚSCULAS y SIN ACENTOS: "EL ALBUM B - PRUEBA GRATIS". Asegúrate de que los caracteres estén bien impresos en tipografía clara y sin deformaciones. El patrón de líneas debe ser translúcido y sutil pero perfectamente legible sobre la fotografía para proteger los derechos de autor.`;
