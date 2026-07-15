@@ -80,9 +80,7 @@ function procesarFotoConGemini(file, estiloPrompt) {
   const base64 = Utilities.base64Encode(blob.getBytes());
   const mimeType = blob.getContentType() || "image/jpeg";
 
-  const prompt = "Edita esta fotografía de evento aplicando este estilo: " + estiloPrompt +
-    ". Mantén a las personas y la composición reconocibles, mejora luz y color de forma artística.";
-
+  const prompt = `Edita esta fotografía aplicando este estilo: ${estiloPrompt}. Mantén el sujeto principal y la composición reconocibles, mejora luz y color de forma artística.`;
   const payload = {
     contents: [{
       parts: [

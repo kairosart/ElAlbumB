@@ -76,7 +76,7 @@ function activadorPrincipal(e) {
   console.log(`📩 Formulario recibido en la pestaña real: "${sheet.getName()}"`);
 
   if (nombrePestana === "PACK EXPRESS") {
-    mejorarFotoBoda(e); 
+    pedidoPackExpress(e); 
   } else if (nombrePestana === "PRUEBA GRATIS") {
     ejecutarPruebaGratis(e); 
   } else if (nombrePestana === "ALBUM_B_EVENTOS") {
@@ -87,28 +87,47 @@ function activadorPrincipal(e) {
 }
 
 // =================================================================================
-// FASE 1: RECEPCIÓN DEL PEDIDO (ENVÍO DE PETICIÓN DE PAGO BIZUM)
+// FASE 1: RECEPCIÓN DEL PEDIDO PACK EXPRESS (ENVÍO DE PETICIÓN DE PAGO BIZUM)
 // =================================================================================
 
-function mejorarFotoBoda(e) {
+function pedidoPackExpress(e) {
   try {
+    // Validar que el evento existe
+    if (!e || !e.range) {
+      //console.error("El script no fue invocado por un evento de hoja.");
+      //return;
+    }
+
     const sheet = e.range.getSheet();
     const fila = e.range.getRow(); 
+    
+    // Validar que estamos en la fila correcta (opcional, evita ejecutar en cabeceras)
+    if (fila < 2) return;
+
     const emailCliente   = sheet.getRange(fila, 2).getValue().toString().trim().toLowerCase(); 
     const nombreTitular  = sheet.getRange(fila, 3).getValue().toString().trim();               
 
     if (!emailCliente) return;
 
+    // Escribir el estado
     sheet.getRange(fila, 8).setValue("Pendiente");
-    const asunto = "🎨 ¡Tus fotos ya están en la mesa de revelado! - El Álbum B";
+    
+    // Forzar la actualización de la hoja para que el valor se guarde antes de enviar el mail
+    SpreadsheetApp.flush(); 
+
+    const asunto = "¡Tus fotos ya están en la mesa de revelado! - El Álbum B";
     const cuerpoHtml = `
       <p>¡Hola!</p>
       <p>Ya tenemos tus fotos en la mesa de revelado de <b>El Álbum B</b>.</p>
       <p>Para activar tu pedido de <b>4,99 €</b> realiza un Bizum al teléfono <b>${TELEFONO_BIZUM}</b>.</p>
-      <p>💡 <i>Cruzaremos el ingreso automáticamente con tu nombre: <b>${nombreTitular}</b>.</i></p>
+      <p><i>Cruzaremos el ingreso automáticamente con tu nombre: <b>${nombreTitular}</b>.</i></p>
     `;
+    
     GmailApp.sendEmail(emailCliente, asunto, "", { htmlBody: cuerpoHtml });
-  } catch (error) { console.error("Error en Fase 1 Express: " + error.toString()); }
+
+  } catch (error) { 
+    console.error("Error en Fase 1 Express: " + error.toString()); 
+  }
 }
 
 function enviarPeticionBizumEvento(e) {
@@ -142,6 +161,19 @@ function enviarPeticionBizumEvento(e) {
     GmailApp.sendEmail(emailCliente, asunto, "", { htmlBody: cuerpoHTML });
   } catch(err) { console.error("Error enviando petición de evento: " + err); }
 }
+
+
+function probarPedido() {
+  // Creamos un objeto "mock" (falso) que simula el evento 'e'
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const eventoFalso = {
+    range: sheet.getRange("A20") // Cambia "A2" por una fila real que tenga datos
+  };
+  
+  // Llamamos a tu función pasando el objeto falso
+  pedidoPackExpress(eventoFalso);
+}
+
 
 // =================================================================================
 // FASE 2: VERIFICADOR AUTOMÁTICO DE GMAIL (CADA 5 MIN)
@@ -465,7 +497,7 @@ function ejecutarReveladoGemini(sheet, filaIndex, emailCliente, estiloElegido, f
         const cuerpoEntrega = `
           <p>¡Buenas noticias! Tu pago ha sido verificado y tus fotos ya han salido de la mesa de revelado.</p>
           <p>Puedes verlas y descargarlas a máxima calidad en tu carpeta personalizada de Drive de El Álbum B:</p>
-          <p><a href="${urlCarpeta}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">👉 Ver Mis Fotos Editadas</a></p>
+          <p><a href="${urlCarpeta}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;"> Ver Mis Fotos Editadas</a></p>
           <p>⚠️ <b>Importante:</b> Por motivos de privacidad y almacenamiento, esta carpeta se eliminará automáticamente en <b>15 días</b>. Asegúrate de guardarlas antes de esa fecha.</p>
           <p>¡Muchísimas gracias por confiar en El Álbum B!</p>
         `;
@@ -617,6 +649,7 @@ function enviarCorreoBloqueado(emailDestinatario) {
   GmailApp.sendEmail(emailDestinatario, asunto, "", { htmlBody: cuerpoHTML });
 }
 
+
 /**
  * Función para limpiar automáticamente los registros bloqueados de la prueba gratis.
  * Se ejecutará cada hora mediante un disparador de tiempo.
@@ -641,6 +674,8 @@ function limpiarRegistrosBloqueadosPruebaGratis() {
     }
   }
 }
+
+// FIN PROMO: MOTOR PARA 1 SOLA FOTO GRATIS (FORMULARIO PRUEBA GRATIS)
 
 
 // =================================================================================
@@ -679,6 +714,91 @@ function extraerIdDeUrlDrive(url) {
   if (url.includes('/d/')) return url.split('/d/')[1].split('/')[0];
   if (url.includes('id=')) return url.split('id=')[1].split('&')[0];
   return url.trim();
+}
+
+
+/**
+ * Realiza una limpieza automatizada y selectiva de archivos y carpetas en Google Drive.
+ * 
+ * LOGICA DE FUNCIONAMIENTO:
+ * 1. Define una lista de carpetas "raíz" seguras que nunca serán eliminadas.
+ * 2. Calcula una fecha límite (15 días de antigüedad desde hoy).
+ * 3. Recorre de forma recursiva (profunda) el contenido de las carpetas raíz.
+ * 4. Para cada archivo:
+ *    - Si su fecha de última modificación es anterior a la fecha límite, lo mueve a la papelera.
+ * 5. Para cada subcarpeta:
+ *    - Si al finalizar la limpieza de sus archivos internos queda vacía, la elimina.
+ * 6. Reporta el resultado total de archivos y carpetas eliminados vía email.
+ */
+
+function limpiarCarpetasSeleccionadasConReporte() {
+  const carpetasRaizALimpiar = [
+    "1qTcREG-ebMeKcjtOHI-nA2y4UEwM69RK", // EVENTOS ACTIVOS
+    "1iYNK-3rFyXVysONlVf9VhIa0nvWbS8Es", // EVENTOS
+    "1si9vyULBO5C4encWGX0814F8CdeePtqo1VaDoPKhz-4JA4IDNVQ4L610cW6bUDrhYVdzo5wW", //  Pack Express
+    "1_je93_U_SHcpeEz96NO9v8LSNmzO7qqfBLjWChvl3AxfAVVDbqNbrBvPqGl6pxvmF03aBH0_", // PRUEBA GRATIS
+    "17aA-10hZDrc4RtnDaLZRTnEJBXw92YKe" // CLIENTES
+  ];
+  
+  const DIAS_DE_VIDA = 15;
+  const fechaLimite = new Date();
+  fechaLimite.setDate(fechaLimite.getDate() - DIAS_DE_VIDA);
+  
+  let informe = { html: "<h2>🧹 Informe de Limpieza Profunda</h2>", total: 0 };
+
+  carpetasRaizALimpiar.forEach(id => {
+    try {
+      const carpeta = DriveApp.getFolderById(id);
+      recursivaLimpiar(carpeta, fechaLimite, informe);
+    } catch (e) {
+      informe.html += `<p style="color:red;">Error en raíz ${id}: ${e.message}</p>`;
+    }
+  });
+
+  if (informe.total > 0) {
+    MailApp.sendEmail({
+      to: Session.getActiveUser().getEmail(),
+      subject: `🧹 Limpieza completada: ${informe.total} items eliminados`,
+      htmlBody: informe.html
+    });
+  }
+}
+
+/**
+ * Función recursiva que entra en carpetas, borra archivos viejos
+ * y elimina la carpeta si al final queda vacía.
+ */
+function recursivaLimpiar(carpeta, fechaLimite, informe) {
+  // 1. Limpiar subcarpetas primero (recursividad)
+  const subCarpetas = carpeta.getFolders();
+  while (subCarpetas.hasNext()) {
+    const subCarpeta = subCarpetas.next();
+    recursivaLimpiar(subCarpeta, fechaLimite, informe);
+  }
+
+  // 2. Limpiar archivos en la carpeta actual
+  const archivos = carpeta.getFiles();
+  let archivosEnCarpeta = 0;
+  
+  while (archivos.hasNext()) {
+    const archivo = archivos.next();
+    if (archivo.getLastUpdated() < fechaLimite) {
+      archivo.setTrashed(true);
+      informe.html += `<li>Eliminado archivo: ${archivo.getName()}</li>`;
+      informe.total++;
+    } else {
+      archivosEnCarpeta++;
+    }
+  }
+
+  // 3. Si la carpeta está vacía y NO es una de las raíces principales, se borra
+  // NOTA: No borramos las carpetas raíces que pusiste en la lista, solo las subcarpetas
+  const esRaiz = [/* Pega aquí los IDs de tus raíces para protegerlas */].includes(carpeta.getId());
+  
+  if (archivosEnCarpeta === 0 && !carpeta.getFolders().hasNext() && !esRaiz) {
+    informe.html += `<li><b>Eliminada carpeta vacía: ${carpeta.getName()}</b></li>`;
+    carpeta.setTrashed(true);
+  }
 }
 
 function enviarCorreoInvitacionReintento(email, nombre, restante, pack) {
