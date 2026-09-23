@@ -8,7 +8,7 @@ const NOMBRE_HOJA_EVENTOS = "ALBUM_B_EVENTOS";
 // Única fuente de verdad: subida.gs y Procesamientobatch.gs la usan desde
 // aquí para no tener el mismo ID duplicado (y potencialmente desincronizado)
 // en varios archivos.
-const ID_CARPETA_EVENTOS = "1iYNK-3rFyXVysONlVf9VhIa0nvWbS8Es";
+const ID_CARPETA_EVENTOS = "1Yqw1h68C43aZL2LevkpIiofqeqmBITZi";
 
 // Mapa de tipos de evento a prefijo de carpeta/código.
 // Añade aquí nuevos tipos si el desplegable del formulario crece.
@@ -50,14 +50,7 @@ function prefijoParaTipo(tipoEvento) {
   return PREFIJOS_TIPO_EVENTO[clave] || "EVENTO";
 }
 
-/**
- * Genera un código único corto para un evento nuevo, ej. "BAUTIZO-7F3K9Q".
- */
-function generarCodigoEvento(tipoEvento) {
-  const prefijo = prefijoParaTipo(tipoEvento);
-  const azar = Utilities.getUuid().split("-")[0].toUpperCase(); // 8 caracteres
-  return prefijo + "_" + azar;
-}
+
 
 /**
  * Mapa nombre de cabecera -> índice de columna (0-based), case-insensitive
@@ -73,79 +66,80 @@ function obtenerMapaCabeceras(hoja) {
       // Normalizamos el nombre de la columna: a mayúsculas, quitamos espacios extra y acentos
       const cabeceraNormalizada = normalizarTexto(textoCelda.toString());
       mapa[cabeceraNormalizada] = i;
+      
+      // Añadimos un alias automático para que reconozca el correo del formulario de Google
+      if (cabeceraNormalizada.includes("CORREO") || cabeceraNormalizada.includes("MAIL")) {
+        mapa["EMAIL ADDRESS"] = i;
+      }
     }
   }
   return mapa;
 }
 
 /**
- * Cuenta el TOTAL de fotos que se han subido alguna vez a un evento,
- * sumando las que siguen pendientes (RAW_INVITADOS) y las que ya se
- * procesaron y se sacaron de la cola (RAW_PROCESADAS).
- *
- * IMPORTANTE: no cuenta "EDITADAS" porque esa carpeta contiene los
- * resultados generados por Gemini, no las fotos originales subidas
- * por los invitados; contarla también duplicaría el conteo.
- *
- * Esto evita que el cupo máximo (ej. 200 fotos) se "reabra" cada vez
- * que procesarBatchEquanime mueve fotos fuera de RAW_INVITADOS.
+ * Actualiza el estado y el enlace del álbum cuando termina de procesarse,
+ * contando el número de fotos editadas y guardándolo en la columna "Estado Servicio".
  */
-function buscarEventoPorCodigo(codigo) {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = spreadsheet.getSheetByName("ALBUM_B_EVENTOS");
-  
-  if (!sheet) {
-    return { encontrado: false };
+function entregarAlbumAlCliente(codigoEvento) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getSheets().find(s => normalizarTexto(s.getName()) === normalizarTexto(NOMBRE_HOJA_EVENTOS));
+  if (!hoja) throw new Error('No se encontró la hoja "' + NOMBRE_HOJA_EVENTOS + '"');
+
+  const cab = obtenerMapaCabeceras(hoja);
+  const colEstado = cab["ESTADO SERVICIO"];
+  const colCodigo = cab["CODIGO EVENTO"];
+  const colEnlace = cab["ENLACE ALBUM"];
+
+  if ([colEstado, colCodigo, colEnlace].some(c => c === undefined)) {
+    throw new Error(
+      'Falta alguna columna requerida en ' + NOMBRE_HOJA_EVENTOS + ': ' +
+      'Estado Servicio, Código Evento, Enlace Álbum.'
+    );
   }
 
-  const datos = sheet.getDataRange().getValues();
-  const codigoBuscado = codigo.toUpperCase().trim();
-
-  // Recorremos la hoja buscando el código en la Columna H (índice 7)
+  const datos = hoja.getDataRange().getValues();
+  const codigoBuscado = normalizarTexto(codigoEvento);
+  let fila = -1;
   for (let i = 1; i < datos.length; i++) {
-    const codigoFila = datos[i][7] ? datos[i][7].toString().toUpperCase().trim() : "";
-    
-    if (codigoFila === codigoBuscado) {
-      let fechaFinal = null;
-      
-      try {
-        // 📅 Columna E es el índice 4
-        let valorFechaRaw = datos[i][4]; 
-        
-        if (valorFechaRaw instanceof Date) {
-          fechaFinal = valorFechaRaw;
-        } else if (valorFechaRaw) {
-          let partes = valorFechaRaw.toString().split(/[\/\-]/);
-          if (partes.length === 3) {
-            let dia = parseInt(partes[0], 10);
-            let mes = parseInt(partes[1], 10) - 1; 
-            let anio = parseInt(partes[2], 10);
-            fechaFinal = new Date(anio, mes, dia);
-          } else {
-            fechaFinal = new Date(valorFechaRaw);
-          }
-        }
-        
-        // 🛟 Salvavidas: si falla, asigna hoy para evitar error
-        if (!fechaFinal || isNaN(fechaFinal.getTime())) {
-          fechaFinal = new Date(); 
-        }
-        
-      } catch (e) {
-        fechaFinal = new Date();
-      }
+    if (normalizarTexto(datos[i][colCodigo]) === codigoBuscado) { fila = i; break; }
+  }
+  if (fila === -1) return false;
 
-      return {
-        encontrado: true,
-        tipoEvento: "Evento", 
-        fechaEvento: fechaFinal,
-        prefijo: "EVENTO"
-      };
-    }
+  const evento = buscarEventoPorCodigo(codigoEvento);
+  const nombreCarpetaEvento = codigoEvento.toUpperCase();
+  const carpetaEventos = DriveApp.getFolderById(ID_CARPETA_EVENTOS);
+  const carpetasBoda = carpetaEventos.getFoldersByName(nombreCarpetaEvento);
+  if (!carpetasBoda.hasNext()) throw new Error("No se encontró la carpeta " + nombreCarpetaEvento);
+  const carpetaBoda = carpetasBoda.next();
+
+  const carpetasEditadas = carpetaBoda.getFoldersByName("03_EDITADAS");
+  if (!carpetasEditadas.hasNext()) throw new Error("No se encontró la carpeta 03_EDITADAS en " + nombreCarpetaEvento);
+  const carpetaEditadas = carpetasEditadas.next();
+
+  // Compartir la carpeta: cualquiera con el enlace puede VER (no editar).
+  carpetaEditadas.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  const enlace = carpetaEditadas.getUrl();
+
+  // Contar las fotos totales que hay dentro de la carpeta "03_EDITADAS"
+  let totalFotosEditadas = 0;
+  let archivosEditadas = carpetaEditadas.getFiles();
+  while (archivosEditadas.hasNext()) {
+    archivosEditadas.next();
+    totalFotosEditadas++;
   }
 
-  return { encontrado: false };
+  // Texto que irá en la columna de estado (Ej: "45 FOTOS LISTAS")
+  const textoEstado = totalFotosEditadas + " FOTOS LISTAS";
+
+  // getRange es 1-based (fila y columna); datos/cab son 0-based -> +1 en ambos.
+  hoja.getRange(fila + 1, colEnlace + 1).setValue(enlace);
+  hoja.getRange(fila + 1, colEstado + 1).setValue(textoEstado);
+
+  Logger.log("Evento " + codigoEvento + " actualizado correctamente con " + textoEstado);
+  return true;
 }
+
+
 
 /**
  * Actualiza la columna "Estado Servicio" para el evento dado, localizándola
@@ -180,93 +174,6 @@ function actualizarEstadoServicio(codigoEvento, nuevoEstado) {
   return false;
 }
 
-/**
- * Entrega el álbum al cliente cuando el evento termina de procesarse:
- * 1) comparte la carpeta EDITADAS (visible con el enlace, solo lectura)
- * 2) guarda el enlace en la columna "Enlace Álbum"
- * 3) envía un email al cliente con el enlace
- *
- * Es IDEMPOTENTE: si "Estado Servicio" ya es "FOTOS LISTAS", no vuelve a
- * enviar el email ni a regenerar el enlace. Esto es necesario porque
- * procesarBatchEquanime puede llamarla varias veces (cada vez que el
- * trigger se ejecuta y encuentra la cola vacía) y no queremos spamear
- * al cliente con el mismo email repetido.
- */
-function entregarAlbumAlCliente(codigoEvento) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const hoja = ss.getSheets().find(s => normalizarTexto(s.getName()) === normalizarTexto(NOMBRE_HOJA_EVENTOS));
-  if (!hoja) throw new Error('No se encontró la hoja "' + NOMBRE_HOJA_EVENTOS + '"');
-
-  const cab = obtenerMapaCabeceras(hoja);
-  const colEstado = cab["ESTADO SERVICIO"];
-  const colCodigo = cab["CODIGO EVENTO"];
-  const colEmail = cab["EMAIL ADDRESS"];
-  // La pregunta del formulario para el nombre varía de texto (ej. incluye
-  // una aclaración sobre el Bizum entre paréntesis), así que buscamos por
-  // "empieza por" en vez de exigir coincidencia exacta.
-  const claveNombre = Object.keys(cab).find(k => k.indexOf("NOMBRE Y APELLIDOS") === 0);
-  const colNombre = claveNombre !== undefined ? cab[claveNombre] : undefined;
-  const colEnlace = cab["ENLACE ALBUM"];
-
-  if ([colEstado, colCodigo, colEmail, colNombre, colEnlace].some(c => c === undefined)) {
-    throw new Error(
-      'Falta alguna columna requerida en ' + NOMBRE_HOJA_EVENTOS + ': ' +
-      'Estado Servicio, Código Evento, Email address, Nombre y apellidos, Enlace Álbum. ' +
-      'Si acabas de añadir "Enlace Álbum", revisa que el texto sea exacto.'
-    );
-  }
-
-  const datos = hoja.getDataRange().getValues();
-  const codigoBuscado = normalizarTexto(codigoEvento);
-  let fila = -1;
-  for (let i = 1; i < datos.length; i++) {
-    if (normalizarTexto(datos[i][colCodigo]) === codigoBuscado) { fila = i; break; }
-  }
-  if (fila === -1) return false;
-
-  // Ya entregado antes -> no reenviar email ni regenerar el enlace.
-  const estadoActual = normalizarTexto(String(datos[fila][colEstado] || ""));
-  if (estadoActual === normalizarTexto("FOTOS LISTAS")) {
-    return true;
-  }
-
-  const evento = buscarEventoPorCodigo(codigoEvento);
-  // El código ya incluye el prefijo (lo genera generarCodigoEvento como
-  // "PREFIJO_AZAR"), así que NO hay que volver a anteponer evento.prefijo.
-  const nombreCarpetaEvento = codigoEvento.toUpperCase();
-  const carpetaEventos = DriveApp.getFolderById(ID_CARPETA_EVENTOS);
-  const carpetasBoda = carpetaEventos.getFoldersByName(nombreCarpetaEvento);
-  if (!carpetasBoda.hasNext()) throw new Error("No se encontró la carpeta " + nombreCarpetaEvento);
-  const carpetaBoda = carpetasBoda.next();
-
-  const carpetasEditadas = carpetaBoda.getFoldersByName("EDITADAS");
-  if (!carpetasEditadas.hasNext()) throw new Error("No se encontró la carpeta EDITADAS en " + nombreCarpetaEvento);
-  const carpetaEditadas = carpetasEditadas.next();
-
-  // Compartir la carpeta: cualquiera con el enlace puede VER (no editar).
-  carpetaEditadas.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  const enlace = carpetaEditadas.getUrl();
-
-  // getRange es 1-based (fila y columna); datos/cab son 0-based -> +1 en ambos.
-  hoja.getRange(fila + 1, colEnlace + 1).setValue(enlace);
-  hoja.getRange(fila + 1, colEstado + 1).setValue("FOTOS LISTAS");
-
-  const email = String(datos[fila][colEmail] || "").trim();
-  const nombre = String(datos[fila][colNombre] || "").trim();
-  if (email) {
-    const asunto = "¡Tu álbum de El Álbum B ya está listo! 📸";
-    const cuerpo =
-      "Hola " + (nombre || "") + ",\n\n" +
-      "¡Buenas noticias! Ya hemos terminado de editar las fotos de tu evento.\n\n" +
-      "Puedes verlas y descargarlas aquí:\n" + enlace + "\n\n" +
-      "Gracias por confiar en El Álbum B.\n\nUn saludo.";
-    GmailApp.sendEmail(email, asunto, cuerpo);
-  } else {
-    Logger.log("Evento " + codigoEvento + " no tiene email registrado; no se envía notificación.");
-  }
-
-  return true;
-}
 
 /**
  * Busca un evento por su código en ALBUM_B_EVENTOS.

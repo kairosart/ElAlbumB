@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Short 9:16 - EL ÁLBUM B Party Scan con Gemini AI (FIXED)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap');
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #030712;
+            color: #fff;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Aspect ratio 9:16 container */
+        .phone-container {
+            width: 100vw;
+            height: 100vh;
+            max-width: 430px;
+            max-height: 932px;
+            position: relative;
+            box-shadow: 0 0 50px rgba(236, 72, 153, 0.4);
+            overflow: hidden;
+        }
+
+        @media (min-width: 640px) {
+            .phone-container {
+                border-radius: 40px;
+                border: 8px solid #1f2937;
+                height: 90vh;
+            }
+        }
+
+        /* Custom Animations */
+        @keyframes scanLaser {
+            0%, 100% { top: 15%; opacity: 0.4; }
+            50% { top: 80%; opacity: 1; }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.06); opacity: 1; filter: drop-shadow(0 0 25px #ec4899); }
+        }
+
+        @keyframes particleUp {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+        }
+
+        @keyframes shockwave {
+            0% { transform: scale(0.2); opacity: 1; border-width: 15px; }
+            100% { transform: scale(3.5); opacity: 0; border-width: 1px; }
+        }
+
+        .laser-line {
+            animation: scanLaser 1.8s infinite ease-in-out;
+        }
+
+        .pulse-glow {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        .shockwave-effect {
+            animation: shockwave 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .neon-text-pink {
+            text-shadow: 0 0 10px #ec4899, 0 0 25px #ec4899;
+        }
+
+        .neon-text-cyan {
+            text-shadow: 0 0 10px #06b6d4, 0 0 25px #06b6d4;
+        }
+
+        /* Gemini AI Feature Styling */
+        .gemini-feature-badge {
+            background: linear-gradient(135deg, #1e3a8a 0%, #a855f7 50%, #ec4899 100%);
+            color: white;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 99px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 2px 10px rgba(168, 85, 247, 0.4);
+        }
+
+        .gemini-icon {
+            color: #a855f7; /* Purple */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen bg-slate-950">
+
+    <!-- Main Container Short 9:16 -->
+    <div class="phone-container bg-slate-900 flex flex-col justify-between relative overflow-hidden">
+        
+        <!-- PARTICLES CONTAINER -->
+        <div id="particles" class="absolute inset-0 pointer-events-none z-20"></div>
+
+        <!-- Top Overlay UI (TikTok/Reels style) -->
+        <div class="absolute top-0 left-0 right-0 z-40 p-4 flex justify-between items-center bg-gradient-to-b from-black/90 via-black/40 to-transparent">
+            <div class="flex items-center gap-2">
+                <span class="bg-red-600 text-xs font-bold px-2.5 py-1 rounded-full animate-pulse tracking-wider shadow-lg">LIVESTREAM</span>
+                <span class="text-xs font-bold text-white drop-shadow">@PartyMia_Music</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="gemini-feature-badge flex items-center gap-1.5"><i class="fas fa-brain text-[9px]"></i>Gemini AI</span>
+                <div class="flex gap-4 text-white text-lg">
+                    <button id="soundToggleBtn" class="hover:text-pink-400 transition-colors drop-shadow"><i class="fas fa-volume-up"></i></button>
+                    <button id="restartBtn" class="hover:text-pink-400 transition-colors drop-shadow" title="Reiniciar Video"><i class="fas fa-redo-alt"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Scene Canvas / Container -->
+        <div id="sceneContainer" class="relative w-full h-full flex flex-col items-center justify-center">
+
+            <!-- SCENE 1: FIESTA + AI CAMERA FEATURE -->
+            <div id="scene1" class="scene active absolute inset-0 w-full h-full flex flex-col justify-end p-6 z-10 transition-all duration-700">
+                <!-- Real Scene Background Image -->
+                <img src="https://storage.googleapis.com/generative-ai-downloads/images/album_b_party_qr_scan.png" alt="Chica en la fiesta frente al cartel de El ÁLbum B" class="absolute inset-0 w-full h-full object-cover object-center z-0">
+                
+                <!-- Dark gradient overlay for text readability -->
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-1"></div>
+
+                <!-- NEW GEMINI FEATURE: AI CAMERA VIEWFINDER (Fixed ID for direct access) -->
+                <div id="aiViewfinderPanel" class="absolute top-20 left-6 right-6 z-10 glass-panel p-3 rounded-2xl border border-purple-500/50 shadow-xl flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-purple-950/70 flex items-center justify-center text-3xl gemini-icon animate-pulse">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-300">Visor de IA en Vivo</span>
+                            <span class="text-[9px] text-purple-400 font-mono">Gemini Vision PRO</span>
+                        </div>
+                        <p id="aiCameraDesc" class="text-[11px] text-white font-medium mt-1">Apuntando... Identificando objetos en la fiesta.</p>
+                    </div>
+                </div>
+
+                <!-- Scene Content -->
+                <div class="relative z-10 mb-20 text-center flex flex-col items-center">
+                    <span class="bg-pink-600/90 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest mb-2 shadow-lg backdrop-blur">
+                        🎉 FIESTA DE LANZAMIENTO
+                    </span>
+                    <h1 class="text-3xl font-black text-white leading-tight mb-2 drop-shadow-md">
+                        ¡MIA ENCONTRÓ EL CÓDIGO DE <span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-400 neon-text-pink">EL ÁLBUM B</span>!
+                    </h1>
+                    <p class="text-slate-200 text-xs max-w-xs mb-5 font-medium shadow-sm">
+                        Hay un póster oficial en la pared del club. Toca el código para escanearlo y subirlo a la red.
+                    </p>
+
+                    <!-- Interactive QR Button Overlay -->
+                    <button id="scanTriggerBtn" class="group glass-panel p-4 rounded-2xl border-2 border-pink-500/80 hover:border-pink-400 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(236,72,153,0.5)] flex items-center gap-3">
+                        <div class="w-12 h-12 bg-white rounded-xl p-1.5 flex items-center justify-center shadow-inner relative overflow-hidden">
+                            <i class="fas fa-images text-3xl text-slate-900 group-hover:scale-110 transition-transform relative z-10"></i>
+                            <div class="absolute inset-0 bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors z-0"></div>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-xs font-extrabold text-pink-400 uppercase tracking-wide flex items-center gap-1.5">
+                                <i class="fas fa-bolt text-[10px]"></i>TOCAR PARA ESCANEAR
+                            </div>
+                            <div class="text-sm font-black text-white">EL ÁLBUM B</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SCENE 2: SCANNING IN PROGRESS -->
+            <div id="scene2" class="scene hidden absolute inset-0 w-full h-full flex flex-col items-center justify-center p-6 text-center z-10">
+                <img src="https://storage.googleapis.com/generative-ai-downloads/images/album_b_party_qr_scan.png" alt="Escaneando el póster de El ÁLbum B" class="absolute inset-0 w-full h-full object-cover object-center z-0 filter blur-sm scale-105">
+                <div class="absolute inset-0 bg-slate-950/80 z-1"></div>
+
+                <div class="relative z-10 flex flex-col items-center">
+                    <div class="text-pink-400 font-mono text-xs mb-4 tracking-widest animate-pulse font-bold">
+                        [ ESCANEO DE GALERÍA EN PROCESO ]
+                    </div>
+
+                    <!-- Scanner Viewport -->
+                    <div class="relative w-64 h-64 border-2 border-pink-500/50 rounded-3xl p-4 glass-panel flex items-center justify-center overflow-hidden shadow-[0_0_40px_rgba(236,72,153,0.4)]">
+                        <!-- Target corners -->
+                        <div class="absolute top-3 left-3 w-6 h-6 border-t-4 border-l-4 border-pink-400 rounded-tl-lg"></div>
+                        <div class="absolute top-3 right-3 w-6 h-6 border-t-4 border-r-4 border-pink-400 rounded-tr-lg"></div>
+                        <div class="absolute bottom-3 left-3 w-6 h-6 border-b-4 border-l-4 border-pink-400 rounded-bl-lg"></div>
+                        <div class="absolute bottom-3 right-3 w-6 h-6 border-b-4 border-r-4 border-pink-400 rounded-br-lg"></div>
+
+                        <!-- Target QR Visual -->
+                        <div class="w-44 h-44 bg-white/90 rounded-2xl p-3 flex flex-col items-center justify-center relative shadow-xl">
+                            <i class="fas fa-camera-retro text-5xl text-pink-600 mb-1"></i>
+                            <span class="text-[10px] font-black text-slate-900 tracking-wider">EL ÁLBUM B</span>
+                            <!-- Laser beam -->
+                            <div class="laser-line absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-pink-500 to-transparent shadow-[0_0_20px_#ec4899]"></div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar & Status -->
+                    <div class="w-64 mt-6">
+                        <div class="flex justify-between text-xs font-mono text-slate-300 mb-2 font-bold">
+                            <span id="scanStatus">Conectando con la red...</span>
+                            <span id="scanPercent" class="text-pink-400">0%</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                            <div id="progressBar" class="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCENE 3: SUBIENDO A LA RED + AI FAN ART FEATURE -->
+            <div id="scene3" class="scene hidden absolute inset-0 w-full h-full flex flex-col items-center justify-center p-6 text-center z-10">
+                <img src="https://storage.googleapis.com/generative-ai-downloads/images/album_b_party_qr_scan.png" alt="Subiendo datos a la red" class="absolute inset-0 w-full h-full object-cover object-center z-0 filter brightness-50">
+                <div class="absolute inset-0 bg-slate-950/85 z-1"></div>
+
+                <div class="relative z-10 flex flex-col items-center w-full">
+                    <div class="relative mb-6">
+                        <!-- Portal Ring -->
+                        <div class="w-44 h-44 rounded-full border-4 border-dashed border-pink-500 animate-[spin_8s_linear_infinite] flex items-center justify-center"></div>
+                        <div class="absolute inset-0 rounded-full border-4 border-cyan-400/50 animate-[spin_5s_linear_infinite_reverse]"></div>
+                        
+                        <!-- Center Cloud Node -->
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <i class="fas fa-cloud-upload-alt text-5xl text-pink-400 pulse-glow"></i>
+                            <span class="text-xs font-mono text-cyan-300 mt-2 font-bold tracking-wider">SUBIENDO A LA RED</span>
+                        </div>
+                    </div>
+
+                    <!-- NEW GEMINI FEATURE: AI FAN ART GENERATOR PREVIEW -->
+                    <div class="glass-panel p-4 rounded-2xl w-full max-w-sm mb-5 border border-purple-500/60 shadow-xl text-left">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-palette gemini-icon text-xl"></i>
+                                <h4 class="text-xs font-black text-white uppercase tracking-wider">Generador de Fan Art de IA</h4>
+                            </div>
+                            <span class="text-[9px] text-purple-400 font-mono">Gemini Pro</span>
+                        </div>
+                        <div class="flex gap-3">
+                            <div id="aiArtPreview" class="w-20 h-20 rounded-xl border border-slate-700 bg-slate-800 flex flex-col items-center justify-center text-center p-2 text-[10px] text-slate-500 font-bold transition-all duration-300">
+                                <i class="fas fa-spinner animate-spin text-lg mb-1"></i>Generando prompt...
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-[11px] text-slate-300 leading-relaxed">
+                                    Gemini está analizando las fotos escaneadas para crear un <span class="text-pink-400 font-bold"> collage exclusivo</span> basado en los colores de la fiesta.
+                                </p>
+                                <span id="aiArtPrompt" class="inline-block mt-2 text-[10px] font-mono text-cyan-300 bg-cyan-950/70 px-2 py-1 rounded truncate w-full border border-cyan-800">...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Data Stream Simulation -->
+                    <div id="dataStreamPanel" class="glass-panel p-3 rounded-xl w-full max-w-sm text-left font-mono text-[10px] space-y-1.5 text-slate-300 border border-pink-500/30">
+                        <div class="text-pink-400 data-line">&gt; Descargando fotos de 'EL ÁLBUM B'...</div>
+                        <div class="text-cyan-400 data-line">&gt; Sincronizando imágenes en alta definición...</div>
+                        <div class="text-emerald-400 font-bold animate-pulse data-line">&gt; ¡GALERÍA COMPLETA AL 100%!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCENE 4: REACCIÓN SORPRENDIDA + AI CHAT FEATURE -->
+            <div id="scene4" class="scene hidden absolute inset-0 w-full h-full flex flex-col justify-between p-6 z-10 pt-16 pb-24">
+                <!-- Background Image (Chica Sorprendida) -->
+                <img src="https://storage.googleapis.com/generative-ai-downloads/images/album_b_party_qr_scan.png" alt="Chica sorprendida en la fiesta con el celular" class="absolute inset-0 w-full h-full object-cover object-center z-0">
+                
+                <!-- Dark gradient overlay for bottom UI -->
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent z-1"></div>
+
+                <!-- Shockwave Background Effect on Entrance -->
+                <div id="shockwave" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-4 border-pink-500 rounded-full pointer-events-none opacity-0 z-10"></div>
+
+                <!-- Top Header Reveal -->
+                <div class="relative z-20 text-center">
+                    <span class="bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white text-xs font-extrabold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-xl border border-white/20">
+                        ¡GALERÍA DESBLOQUEADA! 📸
+                    </span>
+                    <h2 class="text-3xl font-black text-white mt-2 neon-text-pink leading-tight">
+                        ¡EL ÁLBUM B<br>ES ESPECTACULAR!
+                    </h2>
+                </div>
+
+                <!-- Music Player Card & AI CHAT -->
+                <div class="relative z-20 flex flex-col items-center gap-4 w-full max-w-sm mx-auto">
+                    
+                    <!-- Player Card -->
+                    <div class="relative z-20 glass-panel p-4 rounded-3xl border border-pink-500/50 shadow-[0_0_35px_rgba(236,72,153,0.6)] w-full">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-14 h-14 bg-gradient-to-tr from-pink-600 to-purple-800 rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg border border-white/30 relative overflow-hidden">
+                                <i class="fas fa-camera"></i>
+                                <div class="absolute inset-0 bg-pink-500/20 animate-pulse"></div>
+                            </div>
+                            <div class="text-left flex-1 min-w-0">
+                                <h3 class="text-sm font-black text-white truncate">EL ÁLBUM B</h3>
+                                <p class="text-xs text-pink-300 font-medium truncate">Galería Fotográfica VIP</p>
+                                <span class="inline-block mt-1 text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-mono border border-emerald-500/30">
+                                    <i class="fas fa-wifi text-[8px] animate-pulse"></i> 142 FOTOS
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Equalizer Visualizer Bars -->
+                        <div class="flex items-center justify-between h-12 gap-2 my-3 overflow-hidden rounded-xl">
+                            <div class="w-1/4 h-full bg-slate-800 rounded-lg bg-[url('https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=100')] bg-cover bg-center border border-slate-700"></div>
+                            <div class="w-1/4 h-full bg-slate-800 rounded-lg bg-[url('https://images.unsplash.com/photo-1545128485-c400e7702796?w=100')] bg-cover bg-center border border-slate-700"></div>
+                            <div class="w-1/4 h-full bg-slate-800 rounded-lg bg-[url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=100')] bg-cover bg-center border border-slate-700"></div>
+                            <div class="w-1/4 h-full flex items-center justify-center rounded-lg text-[11px] font-bold text-white border border-slate-700 bg-pink-600/40">
+                                +139
+                            </div>
+                        </div>
+
+                        <!-- Call To Action Button -->
+                        <button id="ctaBtn" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white font-extrabold text-xs tracking-wider uppercase shadow-lg transform hover:scale-105 active:scale-95 transition-all">
+                            ¡VER TODAS LAS FOTOS! ✨
+                        </button>
+                    </div>
+
+                    <!-- NEW GEMINI FEATURE: AI PARTY ASSISTANT CHATBOT -->
+                    <div id="aiChatbot" class="glass-panel p-4 rounded-3xl w-full border border-purple-500/60 shadow-xl text-left flex flex-col gap-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <i class="fas fa-robot gemini-icon text-xl"></i>
+                                <h4 class="text-xs font-black text-white uppercase tracking-wider">Asistente de Fiesta de IA</h4>
+                            </div>
+                            <span class="text-[9px] text-purple-400 font-mono">Gemini Pro API</span>
+                        </div>
+                        <div id="chatHistory" class="space-y-2 h-20 overflow-y-auto pr-1 text-[11px] font-medium text-slate-300 scroll-smooth">
+                            <div class="flex items-start gap-1.5"><span class="gemini-icon"><i class="fas fa-robot"></i></span> ¡Hola! Soy Gemini. ¿Qué quieres saber de EL ÁLBUM B o de la fiesta?</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="chatInput" placeholder="Pregunta sobre la fiesta..." class="flex-1 bg-slate-900/60 text-white text-xs px-3 py-2 rounded-lg border border-slate-700 focus:border-purple-500 outline-none transition-colors">
+                            <button id="chatSendBtn" class="bg-purple-600 text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-purple-500 transition-colors active:scale-95">
+                                <i class="fas fa-paper-plane"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Side Social Actions (Shorts/TikTok UI) -->
+        <div class="absolute right-3 bottom-24 z-40 flex flex-col items-center gap-5 text-white">
+            <!-- Like Button -->
+            <button id="likeBtn" class="flex flex-col items-center group">
+                <div class="w-11 h-11 rounded-full bg-slate-900/80 backdrop-blur flex items-center justify-center text-xl group-hover:text-pink-500 group-hover:scale-110 transition-all border border-slate-700 shadow-lg relative overflow-hidden active:scale-90">
+                    <i class="fas fa-heart" id="likeIcon"></i>
+                    <div class="absolute inset-0 bg-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                </div>
+                <span class="text-[10px] font-bold mt-1 shadow-sm" id="likeCount">248.5K</span>
+            </button>
+
+            <!-- Comments -->
+            <button class="flex flex-col items-center group">
+                <div class="w-11 h-11 rounded-full bg-slate-900/80 backdrop-blur flex items-center justify-center text-xl group-hover:text-cyan-400 group-hover:scale-110 transition-all border border-slate-700 shadow-lg relative overflow-hidden active:scale-90">
+                    <i class="fas fa-comment-dots"></i>
+                    <div class="absolute inset-0 bg-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                </div>
+                <span class="text-[10px] font-bold mt-1 shadow-sm">4,912</span>
+            </button>
+
+            <!-- Share -->
+            <button id="shareBtn" class="flex flex-col items-center group">
+                <div class="w-11 h-11 rounded-full bg-slate-900/80 backdrop-blur flex items-center justify-center text-xl group-hover:text-emerald-400 group-hover:scale-110 transition-all border border-slate-700 shadow-lg relative overflow-hidden active:scale-90">
+                    <i class="fas fa-share"></i>
+                    <div class="absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                </div>
+                <span class="text-[10px] font-bold mt-1 shadow-sm">Compartir</span>
+            </button>
+
+            <!-- Music Disc Spinning -->
+            <div class="w-10 h-10 rounded-md bg-slate-900 border border-white flex items-center justify-center mt-1 shadow-xl overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=100" class="w-full h-full object-cover opacity-80" alt="Audio track cover">
+            </div>
+        </div>
+
+        <!-- Bottom Description Bar -->
+        <div class="absolute bottom-0 left-0 right-0 z-30 p-4 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent">
+            <div class="pr-14">
+                <div class="flex items-center gap-2 mb-1">
+                    <h3 class="font-extrabold text-sm text-white">@Mia_Photographer</h3>
+                    <span class="text-pink-400 text-xs"><i class="fas fa-check-circle"></i></span>
+                </div>
+                <p class="text-xs text-slate-200 line-clamp-2 leading-snug">
+                    ¡Acabo de escanear el QR y desbloquear la galería de fotos secreta de la fiesta! Las capturas son irreales 📸✨ #ElÁlbumB #PhotoDump #Reels #GeminiAI
+                </p>
+                <div class="flex items-center gap-2 mt-2 text-[11px] text-white font-mono bg-slate-900/50 px-2 py-1 rounded-full inline-flex w-max backdrop-blur-sm">
+                    <i class="fas fa-music text-[10px]"></i>
+                    <span class="truncate">Sonido original - Viral Reels Audio</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white text-xs px-4 py-2 rounded-full border border-pink-500 opacity-0 pointer-events-none transition-all duration-300 shadow-2xl flex items-center gap-2">
+            <i class="fas fa-info-circle text-pink-400"></i>
+            <span id="toastMsg">Mensaje</span>
+        </div>
+
+    </div>
+
+    <!-- Web Audio API Synthesizer Sound Effects -->
+    <script>
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playBeep(freq = 440, type = 'sine', duration = 0.1) {
+                if (this.muted) return;
+                this.init();
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e){}
+            }
+
+            playScanEffect() {
+                if (this.muted) return;
+                this.init();
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(350, now);
+                    osc.frequency.exponentialRampToValueAtTime(1400, now + 0.35);
+                    gain.gain.setValueAtTime(0.09, now);
+                    gain.gain.linearRampToValueAtTime(0.001, now + 0.35);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(now + 0.35);
+                } catch(e){}
+            }
+
+            playSuccessSound() {
+                if (this.muted) return;
+                this.init();
+                try {
+                    const now = this.ctx.currentTime;
+                    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                    notes.forEach((freq, idx) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + (idx * 0.07));
+                        gain.gain.setValueAtTime(0.12, now + (idx * 0.07));
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.07) + 0.3);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + (idx * 0.07));
+                        osc.stop(now + (idx * 0.07) + 0.3);
+                    });
+                } catch(e){}
+            }
+        }
+
+        const sfx = new SoundFX();
+
+        const scenes = {
+            1: document.getElementById('scene1'),
+            2: document.getElementById('scene2'),
+            3: document.getElementById('scene3'),
+            4: document.getElementById('scene4')
+        };
+
+        const scanTriggerBtn = document.getElementById('scanTriggerBtn');
+        const progressBar = document.getElementById('progressBar');
+        const scanStatus = document.getElementById('scanStatus');
+        const scanPercent = document.getElementById('scanPercent');
+        const shockwave = document.getElementById('shockwave');
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const likeBtn = document.getElementById('likeBtn');
+        const likeIcon = document.getElementById('likeIcon');
+        const likeCount = document.getElementById('likeCount');
+        const shareBtn = document.getElementById('shareBtn');
+        const ctaBtn = document.getElementById('ctaBtn');
+
+        // New Gemini Features DOM
+        const aiCameraDesc = document.getElementById('aiCameraDesc');
+        const aiArtPreview = document.getElementById('aiArtPreview');
+        const aiArtPrompt = document.getElementById('aiArtPrompt');
+        const chatHistory = document.getElementById('chatHistory');
+        const chatInput = document.getElementById('chatInput');
+        const chatSendBtn = document.getElementById('chatSendBtn');
+
+        let isLiked = false;
+        let likes = 248500;
+        let geminiVisionInterval; // Variable to clear interval
+
+        // Create Background Floating Particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            if (!container) return; // Guard clause
+            container.innerHTML = '';
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                const size = Math.random() * 5 + 2;
+                const left = Math.random() * 100;
+                const duration = Math.random() * 4 + 3;
+                const delay = Math.random() * 4;
+                const colors = ['#ec4899', '#06b6d4', '#a855f7', '#facc15'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+
+                particle.className = 'absolute rounded-full pointer-events-none';
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${left}%`;
+                particle.style.backgroundColor = color;
+                particle.style.boxShadow = `0 0 12px ${color}`;
+                particle.style.animation = `particleUp ${duration}s infinite linear ${delay}s`;
+                container.appendChild(particle);
+            }
+        }
+
+        // Scene Navigation
+        function showScene(sceneNumber) {
+            Object.keys(scenes).forEach(key => {
+                if (parseInt(key) === sceneNumber) {
+                    scenes[key].classList.remove('hidden');
+                    scenes[key].classList.add('active');
+                } else {
+                    scenes[key].classList.add('hidden');
+                    scenes[key].classList.remove('active');
+                }
+            });
+        }
+
+        // Simulation for Gemini API Features
+        function simulateGeminiVision() {
+            if (!aiCameraDesc) return; // Error guard
+            
+            const detections = [
+                "Identificado: Multitud de personas bailando",
+                "Identificado: Luces estroboscópicas de discoteca",
+                "Identificado: Altavoz de concierto grande",
+                "Identificado: Póster oficial de EL ÁLBUM B (PUNTO DE INTERÉS)"
+            ];
+            let idx = 0;
+            aiCameraDesc.innerText = detections[idx];
+            
+            // Clear existing interval if any
+            if (geminiVisionInterval) clearInterval(geminiVisionInterval);
+
+            geminiVisionInterval = setInterval(() => {
+                idx++;
+                if (idx < detections.length) {
+                    aiCameraDesc.innerText = detections[idx];
+                    aiCameraDesc.classList.add('animate-pulse');
+                    setTimeout(() => {
+                        if (aiCameraDesc) aiCameraDesc.classList.remove('animate-pulse');
+                    }, 500);
+                } else {
+                    clearInterval(geminiVisionInterval);
+                    aiCameraDesc.innerText = "¡Objetivo identificado: Código QR de El ÁLbum B detectado!";
+                    aiCameraDesc.classList.add('text-pink-400');
+                    if (scanTriggerBtn) scanTriggerBtn.classList.add('pulse-glow');
+                }
+            }, 1800);
+        }
+
+        function simulateGeminiFanArt() {
+            if (!aiArtPreview || !aiArtPrompt) return; // Error guard
+
+            const prompts = [
+                "Collage de la pista de baile, luces de neón vibrantes",
+                "Mosaico interactivo de caras sonrientes en la fiesta",
+                "Fotos polaroid flotando en un espacio digital 3D",
+                "Álbum fotográfico con destellos mágicos y filtros vintage"
+            ];
+            const promptIdx = Math.floor(Math.random() * prompts.length);
+            
+            setTimeout(() => {
+                // Check if scene 3 is still active
+                if (scenes[3].classList.contains('hidden')) return;
+
+                // Add to terminal data stream (FIXED implementation)
+                const streamPanel = document.getElementById('dataStreamPanel');
+                if (streamPanel) {
+                    const newNode = document.createElement('div');
+                    newNode.className = 'text-purple-300 data-line';
+                    newNode.innerText = `&gt; Analizando los colores de las fotos... [Gemini API]`;
+                    // streamPanel.insertBefore(newNode, streamPanel.lastChild); // This caused the error!
+                    streamPanel.appendChild(newNode); // append is safer and does what's needed
+                }
+                
+                // Show AI Fan art result
+                aiArtPrompt.innerText = prompts[promptIdx];
+                aiArtPreview.innerHTML = '<i class="fas fa-image gemini-icon text-4xl mb-1"></i> Collage Generado';
+                aiArtPreview.classList.remove('text-slate-500');
+                aiArtPreview.classList.add('text-slate-200');
+                aiArtPreview.style.border = '2px solid #a855f7';
+                aiArtPreview.style.background = 'linear-gradient(135deg, #a855f720, #ec489920)';
+                
+            }, 1200);
+        }
+
+        function simulateGeminiChat() {
+            if (!chatHistory || !chatInput) return; // Error guard
+
+            const userMsg = chatInput.value.trim();
+            if (!userMsg) return;
+
+            // Clear input
+            chatInput.value = '';
+
+            // Add user message
+            const userDiv = document.createElement('div');
+            userDiv.className = 'flex items-start gap-1.5 justify-end';
+            userDiv.innerHTML = `<span class="font-bold text-cyan-400">Tú:</span> ${userMsg}`;
+            chatHistory.appendChild(userDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // Gemini Response after delay
+            setTimeout(() => {
+                // Guard clause if user navigated away
+                if (scenes[4].classList.contains('hidden')) return;
+
+                let response;
+                const lMsg = userMsg.toLowerCase();
+                
+                if (lMsg.includes('álbum b') || lMsg.includes('fotos') || lMsg.includes('galería')) {
+                    response = "¡EL ÁLBUM B tiene más de 140 fotos exclusivas de esta noche! Capturas increíbles con luces de neón y momentos inolvidables.";
+                } else if (lMsg.includes('fiesta') || lMsg.includes('donde')) {
+                    response = "¡Estamos en la zona VIP capturando las mejores imágenes! Todo el mundo está saliendo espectacular en cámara. 📸";
+                } else {
+                    response = "Las fotos de EL ÁLBUM B son puro fuego. ¿Quieres buscar una foto en específico o ver la galería principal?";
+                }
+
+                const geminiDiv = document.createElement('div');
+                geminiDiv.className = 'flex items-start gap-1.5';
+                geminiDiv.innerHTML = `<span class="gemini-icon"><i class="fas fa-robot"></i></span> ${response}`;
+                chatHistory.appendChild(geminiDiv);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+                sfx.playBeep(700, 'triangle', 0.05);
+
+            }, 1500);
+        }
+
+        // Automated Interactive Storyflow Sequence
+        function startScanningFlow() {
+            if (geminiVisionInterval) clearInterval(geminiVisionInterval); // Stop previous feature
+            sfx.playScanEffect();
+            showScene(2);
+
+            let progress = 0;
+            const statuses = [
+                "Escaneando póster del álbum fotográfico...",
+                "Extrayendo galería visual... (Gemini)",
+                "Procesando fotos en alta resolución...",
+                "¡Galería desbloqueada!"
+            ];
+
+            const interval = setInterval(() => {
+                progress += 5;
+                if (progressBar) progressBar.style.width = `${progress}%`;
+                if (scanPercent) scanPercent.innerText = `${progress}%`;
+
+                if (scanStatus) {
+                    if (progress < 30) scanStatus.innerText = statuses[0];
+                    else if (progress < 60) scanStatus.innerText = statuses[1];
+                    else if (progress < 90) scanStatus.innerText = statuses[2];
+                    else scanStatus.innerText = statuses[3];
+                }
+
+                if (progress % 20 === 0) {
+                    sfx.playBeep(650 + progress * 4, 'sine', 0.05);
+                }
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(startUploadFlow, 400);
+                }
+            }, 75);
+        }
+
+        function startUploadFlow() {
+            showScene(3);
+            sfx.playBeep(880, 'square', 0.2);
+            simulateGeminiFanArt(); // Trigger AI art feature
+
+            setTimeout(() => {
+                sfx.playBeep(1100, 'square', 0.2);
+            }, 600);
+
+            setTimeout(() => {
+                // Check if user hasn't restarted
+                if (!scenes[3].classList.contains('hidden')) startRevealFlow();
+            }, 2500);
+        }
+
+        function startRevealFlow() {
+            showScene(4);
+            sfx.playSuccessSound();
+
+            if (shockwave) {
+                shockwave.classList.remove('opacity-0');
+                shockwave.classList.add('shockwave-effect');
+
+                setTimeout(() => {
+                    if (shockwave) {
+                        shockwave.classList.remove('shockwave-effect');
+                        shockwave.classList.add('opacity-0');
+                    }
+                }, 1200);
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            if (!toast || !toastMsg) return;
+
+            toastMsg.innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                if (toast) {
+                    toast.classList.remove('opacity-100');
+                    toast.classList.add('opacity-0', 'pointer-events-none');
+                }
+            }, 2500);
+        }
+
+        // --- Event Listeners and Initial State ---
+
+        // QR Button
+        if (scanTriggerBtn) scanTriggerBtn.addEventListener('click', () => {
+            sfx.init();
+            startScanningFlow();
+        });
+
+        // Restart button
+        if (restartBtn) restartBtn.addEventListener('click', () => {
+            sfx.playBeep(300, 'sine', 0.1);
+            if (geminiVisionInterval) clearInterval(geminiVisionInterval);
+            location.reload(); // Re-load the app to reset all states
+        });
+
+        // Sound Toggle
+        if (soundToggleBtn) soundToggleBtn.addEventListener('click', () => {
+            sfx.muted = !sfx.muted;
+            const icon = soundToggleBtn.querySelector('i');
+            if (icon) {
+                if (sfx.muted) {
+                    icon.className = 'fas fa-volume-mute text-red-400';
+                    showToast("Audio desactivado");
+                } else {
+                    icon.className = 'fas fa-volume-up text-pink-400';
+                    sfx.playBeep(800, 'sine', 0.1);
+                    showToast("Audio activado");
+                }
+            }
+        });
+
+        // Like Button
+        if (likeBtn) likeBtn.addEventListener('click', () => {
+            sfx.init();
+            isLiked = !isLiked;
+            if (likeIcon && likeCount) {
+                if (isLiked) {
+                    likes++;
+                    likeIcon.classList.add('text-pink-500', 'scale-125');
+                    sfx.playBeep(900, 'sine', 0.15);
+                } else {
+                    likes--;
+                    likeIcon.classList.remove('text-pink-500', 'scale-125');
+                }
+                likeCount.innerText = (likes / 1000).toFixed(1) + 'K';
+            }
+        });
+
+        // Share button
+        if (shareBtn) shareBtn.addEventListener('click', () => {
+            sfx.playBeep(700, 'sine', 0.1);
+            showToast("¡Enlace copiado al portapapeles!");
+        });
+
+        // CTA Button
+        if (ctaBtn) ctaBtn.addEventListener('click', () => {
+            sfx.playSuccessSound();
+            showToast("¡Abriendo EL ÁLBUM B!");
+        });
+
+        // Chat send button
+        if (chatSendBtn) chatSendBtn.addEventListener('click', () => {
+            simulateGeminiChat();
+        });
+
+        // Chat Enter key press
+        if (chatInput) chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                simulateGeminiChat();
+            }
+        });
+
+        // Initialize particles & features on load
+        window.onload = () => {
+            createParticles();
+            showScene(1); // Set Scene 1 active explicitly
+            
+            // Make sure Gemini Description is present before starting
+            const targetElement = document.getElementById('aiCameraDesc');
+            if (targetElement) {
+                simulateGeminiVision(); // Safe start
+            } else {
+                console.error("aiCameraDesc element not found during onload.");
+            }
+        };
+    </script>
+</body>
+</html>

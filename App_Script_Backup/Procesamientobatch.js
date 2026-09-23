@@ -30,9 +30,22 @@ function procesarTodosLosEventosPendientes() {
   const TIEMPO_MAXIMO_MS = 5 * 60 * 1000; // margen de 1 min sobre el límite real de 6
   const inicio = Date.now();
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const hoja = ss.getSheets().find(s => normalizarTexto(s.getName()) === normalizarTexto(NOMBRE_HOJA_EVENTOS));
+  
+// 1. Recuperamos el ID guardado en las propiedades del script
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const idHojaObrador = scriptProperties.getProperty("ID_SHEET"); // O el nombre de propiedad que uses para la hoja
+  
+  if (!idHojaObrador) {
+    console.error("❌ ERROR: No se encontró la propiedad con el ID en la configuración.");
+    return;
+  }
+
+  // 2. Abrimos la hoja de cálculo de forma segura por su ID (evita el error de 'ActiveSpreadsheet')
+  const ss = SpreadsheetApp.openById(idHojaObrador);
+  const hoja = ss.getActiveSheet(); // O usa ss.getSheetByName("NombreDePestaña")
   if (!hoja) throw new Error('No se encontró la hoja "' + NOMBRE_HOJA_EVENTOS + '"');
+
+
 
   const cab = obtenerMapaCabeceras(hoja);
   const colCodigo = cab["CODIGO EVENTO"];
@@ -85,17 +98,17 @@ function procesarBatchEquanime(codigoEvento) {
   if (!carpetasBoda.hasNext()) throw new Error("No se encontró la carpeta " + nombreCarpetaEvento);
   const carpetaBoda = carpetasBoda.next();
 
-  const carpetasRaw = carpetaBoda.getFoldersByName("RAW_INVITADOS");
+  const carpetasRaw = carpetaBoda.getFoldersByName("01_RAW_INVITADOS");
   if (!carpetasRaw.hasNext()) throw new Error("No se encontró RAW_INVITADOS en " + nombreCarpetaEvento);
   const carpetaRaw = carpetasRaw.next();
 
   // Carpeta de salida para las fotos ya editadas
   let carpetaEditadas;
-  const carpetasEditadas = carpetaBoda.getFoldersByName("EDITADAS");
+  const carpetasEditadas = carpetaBoda.getFoldersByName("03_EDITADAS");
   if (carpetasEditadas.hasNext()) {
     carpetaEditadas = carpetasEditadas.next();
   } else {
-    carpetaEditadas = carpetaBoda.createFolder("EDITADAS");
+    carpetaEditadas = carpetaBoda.createFolder("03_EDITADAS");
   }
 
   // 1. Listar todos los archivos pendientes y extraer sessionId + timestamp
@@ -111,7 +124,7 @@ function procesarBatchEquanime(codigoEvento) {
   }
 
   if (archivos.length === 0) {
-    Logger.log("No quedan fotos pendientes en RAW_INVITADOS para " + nombreCarpetaEvento);
+    Logger.log("No quedan fotos pendientes en 01_RAW_INVITADOS para " + nombreCarpetaEvento);
     // Puede que ya se hubiera marcado en una ejecución anterior; escribirlo
     // de nuevo es inofensivo (idempotente) y cubre el caso de que el evento
     // nunca haya tenido fotos que procesar.
@@ -152,7 +165,7 @@ function procesarBatchEquanime(codigoEvento) {
     // Ajusta la referencia del archivo al nuevo destino:
     const fileProcesado = carpetaProcesadas.getFilesByName(item.file.getName()).next();
     
-    const resultadoBlob = procesarFotoConGemini(fileProcesado, estiloPrompt);
+    const resultadoBlob = procesarFotoConVertexAI(fileProcesado, estiloPrompt);
     carpetaEditadas.createFile(resultadoBlob.setName("EDIT_" + item.file.getName()));
     procesadas++;
   } catch (e) {
@@ -175,9 +188,9 @@ function procesarBatchEquanime(codigoEvento) {
 }
 
 function getOrCrearCarpetaProcesadas(carpetaBoda) {
-  const existentes = carpetaBoda.getFoldersByName("RAW_PROCESADAS");
+  const existentes = carpetaBoda.getFoldersByName("02_RAW_PROCESADAS");
   if (existentes.hasNext()) return existentes.next();
-  return carpetaBoda.createFolder("RAW_PROCESADAS");
+  return carpetaBoda.createFolder("02_RAW_PROCESADAS");
 }
 
 
@@ -185,6 +198,33 @@ function getOrCrearCarpetaProcesadas(carpetaBoda) {
 
 
 function probarProcesamientoCompleto() {
-  const resultado = procesarBatchEquanime("FIESTA_DFF5C668");
+  const resultado = procesarBatchEquanime("EVENTOS_329B196E");
   Logger.log(resultado);
 }
+
+
+function descubrirCabeceraFaltante() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getSheetByName("ALBUM_B_EVENTOS");
+  
+  if (!hoja) {
+    Logger.log("❌ No se encontró la hoja ALBUM_B_EVENTOS");
+    return;
+  }
+
+  // Usamos tu función de comun.gs para ver cómo las está leyendo
+  const cab = obtenerMapaCabeceras(hoja);
+  
+  Logger.log("🔍 COMPROBANDO COLUMNAS EN TU HOJA...");
+  Logger.log("ESTADO SERVICIO: " + (cab["ESTADO SERVICIO"] !== undefined ? "✅ OK" : "❌ FALTA (Debe llamarse 'Estado Servicio')"));
+  Logger.log("CODIGO EVENTO: " + (cab["CODIGO EVENTO"] !== undefined ? "✅ OK" : "❌ FALTA (Debe llamarse 'Código Evento')"));
+  Logger.log("EMAIL ADDRESS: " + (cab["EMAIL ADDRESS"] !== undefined ? "✅ OK" : "❌ FALTA (Debe llamarse 'Email address')"));
+  Logger.log("ENLACE ALBUM: " + (cab["ENLACE ALBUM"] !== undefined ? "✅ OK" : "❌ FALTA (Debe llamarse 'Enlace Álbum')"));
+  
+  const claveNombre = Object.keys(cab).find(k => k.indexOf("NOMBRE Y APELLIDOS") === 0);
+  Logger.log("NOMBRE Y APELLIDOS: " + (claveNombre !== undefined ? "✅ OK" : "❌ FALTA (Debe empezar por 'Nombre y apellidos')"));
+  
+  Logger.log("\nCabeceras que el script está leyendo realmente de tu fila 1:");
+  Logger.log(Object.keys(cab).join(" | "));
+}
+

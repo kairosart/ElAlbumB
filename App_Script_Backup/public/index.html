@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Subir Archivos - El Álbum B</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #121212;
+      --card: #121212;
+      --card-border-color: #cba135;
+      --gold: #cba135;
+      --gold-soft: #e6c869;
+      --text: #f2ede1;
+      --text-dim: #b9b3a4;
+      --danger: #e0796b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 20px;
+    }
+
+    .container {
+      background-color: var(--card);
+      width: 100%;
+      max-width: 480px;
+      padding: 40px 30px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border-color);
+      box-shadow: 0 0 0 1px var(--gold), 0 12px 30px rgba(203,161,53,0.08);
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 0;
+        align-items: stretch;
+      }
+
+      .container {
+        max-width: 100%;
+        min-height: 100vh;
+        min-height: 100dvh;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 30px 24px;
+      }
+
+      .logo {
+        font-size: 1.6rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      p.subtitle {
+        font-size: 1.05rem;
+      }
+
+      .file-drop-area {
+        padding: 50px 20px;
+      }
+
+      .upload-icon {
+        font-size: 2.6rem;
+      }
+
+      .file-msg {
+        font-size: 1rem;
+      }
+
+      .btn-submit {
+        padding: 18px;
+        font-size: 1.05rem;
+      }
+    }
+
+    .logo {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      margin-bottom: 30px;
+      color: var(--gold-soft);
+    }
+
+    .logo span {
+      font-weight: 400;
+      color: var(--gold);
+    }
+
+    h1 {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+
+    p.subtitle {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      margin-bottom: 30px;
+      line-height: 1.5;
+    }
+
+    #status {
+      font-size: 1rem;
+      color: var(--text-dim);
+      padding: 20px;
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #262620;
+      border-top: 2px solid var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 15px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #uploadForm {
+      display: none;
+    }
+
+    .file-drop-area {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 35px 20px;
+      border: 1.5px dashed var(--card-border-color);
+      border-radius: 8px;
+      background-color: #1a1a1a;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+      margin-bottom: 25px;
+    }
+
+    .file-drop-area:hover, .file-drop-area.is-active {
+      background-color: #201c12;
+      border-color: var(--gold-soft);
+    }
+
+    .upload-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: var(--gold);
+    }
+
+    .file-msg {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .file-input {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+      color: #121212;
+      border: none;
+      padding: 16px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .btn-submit:hover {
+      opacity: 0.85;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    .btn-submit:disabled {
+      background: #3a3a3a;
+      color: #8a8a8a;
+      cursor: not-allowed;
+      opacity: 1;
+    }
+
+    .progress-container {
+      display: none;
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    .progress-text {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-bottom: 5px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background-color: #262620;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold), var(--gold-soft));
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="logo">El Álbum <span>B</span></div>
+
+    <div id="status">
+      <div class="spinner"></div>
+      <p id="status-text">Validando los detalles de tu acceso...</p>
+    </div>
+
+    <div id="uploadForm">
+      <h1>Comparte tus fotos</h1>
+      <p class="subtitle" id="info-cuota">Ayúdanos a capturar cada instante del evento.</p>
+
+      <form id="formArchivos" onsubmit="iniciarSubida(event)">
+        <div class="file-drop-area" id="zonaDroppable">
+          <span class="upload-icon">📸</span>
+          <span class="file-msg" id="file-label">Seleccionar foto</span>
+          <input class="file-input" type="file" id="archivosInput" accept="image/*" onchange="actualizarEtiqueta()" required>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btnEnviar">Enviar Foto</button>
+      </form>
+
+      <div class="progress-container" id="progresoBloque">
+        <div class="progress-text">
+          <span id="progresoMsg">Subiendo foto...</span>
+          <span id="progresoPorcentaje">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progresoBarra"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzDmRskKtzy6TpsfJ9cudOYYH-Vk_pUmN8NP3dEEK2iwcLzDFPQsHsQfX9f1uTjYYgD/exec";
+
+    (function forzarViewport() {
+      let meta = document.querySelector('meta[name="viewport"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = 'viewport';
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    })();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const codigoUrl = urlParams.get('codigo') || urlParams.get('CODIGO') || "";
+    let codigoValidado = codigoUrl.toUpperCase().trim();
+    const MAX_FOTOS_POR_INVITADO = 3;
+
+    window.onload = function() {
+      if (codigoValidado && codigoValidado !== "") {
+        verificarEventoConServidor();
+      } else {
+        mostrarError("Enlace no válido: Falta el código del evento.");
+      }
+    };
+
+    function obtenerFotosSubidas() {
+      if (!codigoValidado) return 0;
+      const registro = localStorage.getItem('subidas_' + codigoValidado);
+      return registro ? parseInt(registro, 10) : 0;
+    }
+
+    function actualizarContadorVisual(cupoGlobalRestante) {
+      const subidasPersonales = obtenerFotosSubidas();
+      const restantesPersonales = MAX_FOTOS_POR_INVITADO - subidasPersonales;
+      const restantesReales = Math.min(restantesPersonales, cupoGlobalRestante);
+
+      const infoCuota = document.getElementById('info-cuota');
+      const btn = document.getElementById('btnEnviar');
+      const zona = document.getElementById('zonaDroppable');
+      const fileInput = document.getElementById('archivosInput');
+
+      if (!infoCuota) return;
+
+      if (cupoGlobalRestante <= 0) {
+        infoCuota.innerHTML = `<span style="color: #e6c869; font-weight: 600;">✨ ¡Objetivo cumplido! El álbum del evento ha alcanzado su capacidad máxima. ¡Muchas gracias!</span>`;
+        bloquearFormulario(btn, zona);
+      } else if (restantesReales <= 0) {
+        infoCuota.innerHTML = `<span style="color: #e0796b; font-weight: 600;">✨ ¡Has alcanzado tu límite de participación de ${subidasPersonales} fotos! Gracias por dejar espacio para el resto de invitados.</span>`;
+        bloquearFormulario(btn, zona);
+      } else {
+        infoCuota.innerHTML = `Ayúdanos a capturar cada instante del evento. <br><strong style="color: #e6c869;">Te quedan ${restantesReales} fotos libres.</strong>`;
+
+        if (zona) {
+          zona.style.pointerEvents = "auto";
+          zona.style.opacity = "1";
+        }
+        if (fileInput) fileInput.disabled = false;
+
+        if (btn) {
+          btn.innerText = "Enviar Foto";
+          if (fileInput && fileInput.files.length > 0) {
+            btn.disabled = false;
+          } else {
+            btn.disabled = true;
+          }
+        }
+      }
+    }
+
+    function actualizarEtiqueta() {
+      const input = document.getElementById('archivosInput');
+      const label = document.getElementById('file-label');
+      const btn = document.getElementById('btnEnviar');
+
+      if (input.files.length > 0) {
+        label.innerText = input.files[0].name;
+        if (btn) btn.disabled = false;
+      } else {
+        label.innerText = "Seleccionar foto";
+        if (btn) btn.disabled = true;
+      }
+    }
+
+    function bloquearFormulario(btn, zona) {
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Subida no disponible";
+      }
+      if (zona) {
+        zona.style.pointerEvents = "none";
+        zona.style.opacity = "0.5";
+      }
+      const fileInput = document.getElementById('archivosInput');
+      if (fileInput) fileInput.disabled = true;
+    }
+
+    async function verificarEventoConServidor() {
+      try {
+        const response = await fetch(`${SCRIPT_URL}?action=verificar&codigo=${encodeURIComponent(codigoValidado)}&tiempo=${Date.now()}`);
+        const res = await response.json();
+
+        if (res.abierto) {
+          document.getElementById('status').style.display = 'none';
+          document.getElementById('uploadForm').style.display = 'block';
+          actualizarContadorVisual(res.cupoGlobalRestante);
+        } else {
+          mostrarError(res.mensaje || "El plazo para subir archivos ha finalizado.");
+        }
+      } catch (err) {
+        mostrarError("Error de conexión con el servidor: " + err);
+      }
+    }
+
+    function mostrarError(mensaje) {
+      const statusDiv = document.getElementById('status');
+      if (statusDiv) {
+        statusDiv.innerHTML = `<p style="color: #e0796b; font-weight: 500; padding: 10px;">${mensaje}</p>`;
+      }
+    }
+
+    /**
+     * Función para redimensionar y comprimir imágenes en el navegador móvil antes de enviarlas
+     */
+    async function optimizarImagenMovil(file, maxWidthOrHeight = 2048, quality = 0.85) {
+      if (!file.type.startsWith('image/')) {
+        return file; 
+      }
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > maxWidthOrHeight) {
+                height = Math.round((height * maxWidthOrHeight) / width);
+                width = maxWidthOrHeight;
+              }
+            } else {
+              if (height > maxWidthOrHeight) {
+                width = Math.round((width * maxWidthOrHeight) / height);
+                height = maxWidthOrHeight;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+              if (!blob) {
+                reject(new Error('Fallo al procesar la imagen en el canvas.'));
+                return;
+              }
+
+              const archivoOptimizado = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              });
+
+              resolve(archivoOptimizado);
+            }, 'image/jpeg', quality);
+          };
+
+          img.onerror = (error) => reject(error);
+        };
+
+        reader.onerror = (error) => reject(error);
+      });
+    }
+
+    // INICIAR SUBIDA INTEGRANDO LA OPTIMIZACIÓN
+    async function iniciarSubida(e) {
+      e.preventDefault();
+      const input = document.getElementById('archivosInput');
+      const btn = document.getElementById('btnEnviar');
+      const progresoBloque = document.getElementById('progresoBloque');
+      const progresoBarra = document.getElementById('progresoBarra');
+      const progresoPorcentaje = document.getElementById('progresoPorcentaje');
+      const progresoMsg = document.getElementById('progresoMsg');
+
+      if (input.files.length === 0) return;
+
+      btn.disabled = true;
+      btn.innerText = "Optimizando foto...";
+      progresoBloque.style.display = 'block';
+
+      let sessionId = localStorage.getItem('session_' + codigoValidado);
+      if (!sessionId) {
+        sessionId = "USER_" + Math.random().toString(36).substring(2, 10).toUpperCase();
+        localStorage.setItem('session_' + codigoValidado, sessionId);
+      }
+
+      let porcentaje = 0;
+      const intervalo = setInterval(() => {
+        if (porcentaje >= 50) {
+          clearInterval(intervalo);
+        } else {
+          porcentaje += 10;
+          progresoBarra.style.width = porcentaje + '%';
+          progresoPorcentaje.innerText = porcentaje + '%';
+        }
+      }, 80);
+
+      try {
+        let fileOriginal = input.files[0];
+
+        progresoMsg.innerText = "Optimizando foto para móvil...";
+        let fileOptimizado = await optimizarImagenMovil(fileOriginal);
+
+        progresoMsg.innerText = "Guardando en Drive...";
+        progresoBarra.style.width = '60%';
+        progresoPorcentaje.innerText = '60%';
+
+        const reader = new FileReader();
+        
+        reader.onload = async function(evt) {
+          const objetoSubida = {
+            action: "subir",
+            codigo: codigoValidado,
+            sessionId: sessionId,
+            type: fileOptimizado.type || "image/jpeg",
+            data: evt.target.result
+          };
+
+          progresoBarra.style.width = '80%';
+          progresoPorcentaje.innerText = '80%';
+
+          try {
+            await fetch(SCRIPT_URL, {
+              method: "POST",
+              mode: "no-cors",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify(objetoSubida)
+            });
+
+            clearInterval(intervalo);
+            progresoBarra.style.width = '100%';
+            progresoPorcentaje.innerText = '100%';
+            progresoMsg.innerText = "¡Completado con éxito!";
+
+            const nuevasSubidas = obtenerFotosSubidas() + 1;
+            localStorage.setItem('subidas_' + codigoValidado, nuevasSubidas);
+
+            setTimeout(() => {
+              alert("¡Tu foto se ha guardado correctamente! Muchas gracias.");
+              document.getElementById('formArchivos').reset();
+              document.getElementById('file-label').innerText = "Seleccionar foto";
+              document.getElementById('progresoBloque').style.display = 'none';
+              verificarEventoConServidor();
+            }, 500);
+
+          } catch (err) {
+            clearInterval(intervalo);
+            alert("Error al subir la foto: " + err);
+            btn.disabled = false;
+            btn.innerText = "Enviar Foto";
+            progresoBloque.style.display = 'none';
+          }
+        };
+
+        reader.readAsDataURL(fileOptimizado);
+
+      } catch (err) {
+        clearInterval(intervalo);
+        alert("Error al procesar la imagen: " + err);
+        btn.disabled = false;
+        btn.innerText = "Enviar Foto";
+        progresoBloque.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

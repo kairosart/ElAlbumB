@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Subir Archivos - El Álbum B</title>
+  <!-- Google Fonts para una tipografía elegante y moderna -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #fcfcfc;
+      color: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      min-height: 100dvh; /* mejor soporte en móvil con barras de navegador dinámicas */
+      padding: 20px;
+    }
+
+    .container {
+      background-color: #ffffff;
+      width: 100%;
+      max-width: 480px;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+      border: 1px solid #f0f0f0;
+      text-align: center;
+    }
+
+    /* En móvil: la tarjeta ocupa toda la pantalla, sin márgenes ni tarjeta flotante pequeña */
+    @media (max-width: 600px) {
+      body {
+        padding: 0;
+        align-items: stretch;
+      }
+
+      .container {
+        max-width: 100%;
+        min-height: 100vh;
+        min-height: 100dvh;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 30px 24px;
+      }
+
+      .logo {
+        font-size: 1.6rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      p.subtitle {
+        font-size: 1.05rem;
+      }
+
+      .file-drop-area {
+        padding: 50px 20px;
+      }
+
+      .upload-icon {
+        font-size: 2.6rem;
+      }
+
+      .file-msg {
+        font-size: 1rem;
+      }
+
+      .btn-submit {
+        padding: 18px;
+        font-size: 1.05rem;
+      }
+    }
+
+    .logo {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+      margin-bottom: 30px;
+      color: #1a1a1a;
+    }
+
+    .logo span {
+      font-weight: 300;
+      color: #666;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+
+    p.subtitle {
+      font-size: 0.95rem;
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.5;
+    }
+
+    /* Estados de carga y mensajes */
+    #status {
+      font-size: 1rem;
+      color: #666;
+      padding: 20px;
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #1a1a1a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 15px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Formulario de subida */
+    #uploadForm {
+      display: none;
+    }
+
+    /* Zona de arrastre / Selección táctil */
+    .file-drop-area {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 35px 20px;
+      border: 1.5px dashed #e0e0e0;
+      border-radius: 8px;
+      background-color: #fafafa;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+      margin-bottom: 25px;
+    }
+
+    .file-drop-area:hover, .file-drop-area.is-active {
+      background-color: #f5f5f5;
+      border-color: #1a1a1a;
+    }
+
+    .upload-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: #999;
+    }
+
+    .file-msg {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #444;
+    }
+
+    .file-input {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* Botón Premium */
+    .btn-submit {
+      width: 100%;
+      background-color: #1a1a1a;
+      color: #ffffff;
+      border: none;
+      padding: 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-submit:hover {
+      background-color: #333333;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    .btn-submit:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    /* Barra de progreso */
+    .progress-container {
+      display: none;
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    .progress-text {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 5px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background-color: #eeeeee;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background-color: #1a1a1a;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="logo">El Álbum <span>B</span></div>
+    
+    <!-- Pantalla de Estado Inicial / Cargando -->
+    <div id="status">
+      <div class="spinner"></div>
+      <p id="status-text">Validando los detalles de tu acceso...</p>
+    </div>
+
+    <!-- Contenedor del Formulario (Se muestra tras validar) -->
+    <div id="uploadForm">
+      <h1>Comparte tus fotos</h1>
+      <!-- CORREGIDO: Se añade id="info-cuota" para que el script pueda actualizar el texto dinámicamente -->
+      <p class="subtitle" id="info-cuota">Ayúdanos a capturar cada instante del evento.</p>
+      
+      <form id="formArchivos" onsubmit="iniciarSubida(event)">
+        <!-- CORREGIDO: Se añade id="zonaDroppable" para que pueda bloquearse visualmente al agotar el cupo -->
+        <div class="file-drop-area" id="zonaDroppable">
+          <span class="upload-icon">📸</span>
+          <span class="file-msg" id="file-label">Seleccionar foto o vídeo</span>
+          <!-- CORREGIDO: Se elimina "multiple" para forzar la selección de 1 sola foto cada vez -->
+          <input class="file-input" type="file" id="archivosInput" accept="image/*" onchange="actualizarEtiqueta()" required>
+        </div>
+        
+        <button type="submit" class="btn-submit" id="btnEnviar">Enviar Archivo</button>
+      </form>
+
+      <!-- Barra de progreso simulada o real para dar feedback visual -->
+      <div class="progress-container" id="progresoBloque">
+        <div class="progress-text">
+          <span id="progresoMsg">Subiendo archivo...</span>
+          <span id="progresoPorcentaje">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progresoBarra"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Workaround: el iframe sandboxed de Apps Script a veces ignora el <meta viewport>
+    // estático en la primera carga en móvil. Lo reforzamos por JS también.
+    (function forzarViewport() {
+      let meta = document.querySelector('meta[name="viewport"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = 'viewport';
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    })();
+
+    // Forzamos el código inicial a mayúsculas para evitar conflictos de registro
+    let codigoValidado = ("<?= codigoEvento ?>").toUpperCase().trim(); 
+    const MAX_FOTOS_POR_INVITADO = 3; 
+
+    window.onload = function() {
+      if (!codigoValidado || codigoValidado === "") {
+        const urlParams = new URLSearchParams(window.location.search);
+        const codigoUrl = urlParams.get('codigo') || urlParams.get('CODIGO') || "";
+        codigoValidado = codigoUrl.toUpperCase().trim();
+      }
+
+      if (codigoValidado && codigoValidado !== "") {
+        verificarEventoConServidor();
+      } else {
+        mostrarError("Enlace no válido: Falta el código del evento.");
+      }
+    };
+
+    function obtenerFotosSubidas() {
+      if (!codigoValidado) return 0;
+      const registro = localStorage.getItem('subidas_' + codigoValidado);
+      return registro ? parseInt(registro, 10) : 0;
+    }
+
+    // Calcula la cuota combinando el almacenamiento local y las respuestas del servidor
+   function actualizarContadorVisual(cupoGlobalRestante) {
+    const subidasPersonales = obtenerFotosSubidas();
+    const restantesPersonales = MAX_FOTOS_POR_INVITADO - subidasPersonales;
+    
+    const restantesReales = Math.min(restantesPersonales, cupoGlobalRestante);
+
+    const infoCuota = document.getElementById('info-cuota');
+    const btn = document.getElementById('btnEnviar');
+    const zona = document.getElementById('zonaDroppable');
+    const fileInput = document.getElementById('archivosInput');
+
+    if (!infoCuota) return;
+
+    if (cupoGlobalRestante <= 0) {
+      infoCuota.innerHTML = `<span style="color: #666; font-weight: 600;">✨ ¡Objetivo cumplido! El álbum del evento ha alcanzado su capacidad máxima. ¡Muchas gracias!</span>`;
+      bloquearFormulario(btn, zona);
+    } else if (restantesReales <= 0) {
+      infoCuota.innerHTML = `<span style="color: #d9534f; font-weight: 600;">✨ ¡Has alcanzado tu límite de participación de ${subidasPersonales} fotos! Gracias por dejar espacio para el resto de invitados.</span>`;
+      bloquearFormulario(btn, zona);
+    } else {
+      // Si quedan fotos, actualizamos el texto informativo
+      infoCuota.innerHTML = `Ayúdanos a capturar cada instante del evento. <br><strong style="color: #1a1a1a;">Te quedan ${restantesReales} fotos/vídeos libres.</strong>`;
+      
+      // Desbloqueamos la zona de carga y el input por si acaso
+      if (zona) {
+        zona.style.pointerEvents = "auto";
+        zona.style.opacity = "1";
+      }
+      if (fileInput) fileInput.disabled = false;
+      
+      // IMPORTANTE: El botón solo debe activarse si ya hay un archivo seleccionado en el input
+      if (btn) {
+        btn.innerText = "Enviar Archivo";
+        if (fileInput && fileInput.files.length > 0) {
+          btn.disabled = false;
+        } else {
+          btn.disabled = true; // Se mantiene desactivado hasta que elijan la siguiente foto
+        }
+      }
+    }
+  }
+
+function actualizarEtiqueta() {
+  const input = document.getElementById('archivosInput');
+  const label = document.getElementById('file-label');
+  const btn = document.getElementById('btnEnviar');
+  
+  if (input.files.length > 0) {
+    label.innerText = input.files[0].name;
+    if (btn) btn.disabled = false; // <-- Esto activa el botón inmediatamente al elegir la nueva foto
+  } else {
+    label.innerText = "Seleccionar foto";
+    if (btn) btn.disabled = true;
+  }
+}
+
+    function bloquearFormulario(btn, zona) {
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Subida no disponible";
+      }
+      if (zona) {
+        zona.style.pointerEvents = "none";
+        zona.style.opacity = "0.5";
+      }
+      const fileInput = document.getElementById('archivosInput');
+      if (fileInput) fileInput.disabled = true;
+    }
+
+    function verificarEventoConServidor() {
+      google.script.run.withSuccessHandler(res => {
+        if (res.abierto) {
+          document.getElementById('status').style.display = 'none';
+          document.getElementById('uploadForm').style.display = 'block';
+          actualizarContadorVisual(res.cupoGlobalRestante); 
+        } else {
+          mostrarError(res.mensaje || "El plazo para subir archivos ha finalizado.");
+        }
+      }).withFailureHandler(err => {
+        mostrarError("Error de conexión con el servidor: " + err);
+      }).verificarPlazoSubida(codigoValidado, Date.now());
+    }
+
+    function mostrarError(mensaje) {
+      const statusDiv = document.getElementById('status');
+      if (statusDiv) {
+        statusDiv.innerHTML = `<p style="color: #d9534f; font-weight: 500; padding: 10px;">${mensaje}</p>`;
+      }
+    }
+
+    function iniciarSubida(e) {
+      e.preventDefault();
+      const input = document.getElementById('archivosInput');
+      const btn = document.getElementById('btnEnviar');
+      const progresoBloque = document.getElementById('progresoBloque');
+      const progresoBarra = document.getElementById('progresoBarra');
+      const progresoPorcentaje = document.getElementById('progresoPorcentaje');
+      const progresoMsg = document.getElementById('progresoMsg');
+      
+      if (input.files.length === 0) return;
+
+      btn.disabled = true;
+      btn.innerText = "Subiendo...";
+      progresoBloque.style.display = 'block';
+
+      let sessionId = localStorage.getItem('session_' + codigoValidado);
+      if (!sessionId) {
+        sessionId = "USER_" + Math.random().toString(36).substring(2, 10).toUpperCase();
+        localStorage.setItem('session_' + codigoValidado, sessionId);
+      }
+
+      let porcentaje = 0;
+      const intervalo = setInterval(() => {
+        if (porcentaje >= 50) {
+          clearInterval(intervalo);
+        } else {
+          porcentaje += 10;
+          progresoBarra.style.width = porcentaje + '%';
+          progresoPorcentaje.innerText = porcentaje + '%';
+        }
+      }, 80);
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res.abierto) {
+            clearInterval(intervalo);
+            alert(res.mensaje || "El plazo de subida ha expirado.");
+            btn.disabled = false;
+            return;
+          }
+          
+          const prefijoEvento = res.prefijo || "EVENTO";
+          const file = input.files[0];
+          const reader = new FileReader();
+
+          reader.onload = function(evt) {
+            const objetoSubida = {
+              codigo: codigoValidado,
+              prefijo: prefijoEvento,
+              sessionId: sessionId,
+              type: file.type || "image/jpeg",
+              data: evt.target.result
+            };
+            
+            progresoMsg.innerText = "Guardando en Drive...";
+            progresoBarra.style.width = '75%';
+            progresoPorcentaje.innerText = '75%';
+
+            google.script.run
+              .withSuccessHandler(function(respuestaServidor) {
+                progresoBarra.style.width = '100%';
+                progresoPorcentaje.innerText = '100%';
+                progresoMsg.innerText = "¡Completado con éxito!";
+                
+                const nuevasSubidas = obtenerFotosSubidas() + 1;
+                localStorage.setItem('subidas_' + codigoValidado, nuevasSubidas);
+                
+                setTimeout(() => {
+                  alert("¡Tu archivo se ha guardado correctamente! Muchas gracias.");
+                  document.getElementById('formArchivos').reset();
+                  document.getElementById('file-label').innerText = "Seleccionar foto o vídeo";
+                  document.getElementById('progresoBloque').style.display = 'none';
+                  
+                  // Consultamos el estado real al servidor; él se encargará de desbloquear el botón a través de actualizarContadorVisual
+                  verificarEventoConServidor();
+                }, 500);
+              })
+              .withFailureHandler(function(err) {
+                clearInterval(intervalo);
+                alert("Error al subir el archivo: " + err);
+                btn.disabled = false;
+                btn.innerText = "Enviar Archivo";
+                progresoBloque.style.display = 'none';
+              })
+              .subirArchivoAlDrive(objetoSubida);
+          };
+
+          reader.readAsDataURL(file);
+        })
+        .withFailureHandler(function(err) {
+          clearInterval(intervalo);
+          alert("Error al verificar los datos del evento: " + err);
+          btn.disabled = false;
+          progresoBloque.style.display = 'none';
+        })
+        .verificarPlazoSubida(codigoValidado, Date.now());
+    }
+  </script>
+</body>
+</html>

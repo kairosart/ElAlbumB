@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Álbum B — Panel de Control</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: #0d0b09;
+    color: #f4ede1;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 32px;
+    background: #0a0908;
+    border-bottom: 1px solid rgba(201,164,92,0.15);
+  }
+  .topbar .crest {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .topbar .crest img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+  .topbar .brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .hero {
+    position: relative;
+    padding: 90px 32px 70px;
+    text-align: center;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(201,164,92,0.10), transparent 55%),
+      radial-gradient(ellipse at 75% 70%, rgba(201,164,92,0.06), transparent 50%),
+      #120f0c;
+    border-bottom: 1px solid rgba(201,164,92,0.15);
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, transparent 1px, transparent 2px);
+    pointer-events: none;
+  }
+  .hero .eyebrow {
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #c9a45c;
+    margin-bottom: 18px;
+    position: relative;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: clamp(34px, 6vw, 54px);
+    margin: 0 0 18px;
+    letter-spacing: 0.3px;
+    position: relative;
+  }
+  .hero .rule {
+    width: 64px;
+    height: 2px;
+    background: #c9a45c;
+    margin: 0 auto 18px;
+    position: relative;
+  }
+  .hero p {
+    font-size: 15px;
+    color: rgba(244,237,225,0.65);
+    max-width: 440px;
+    margin: 0 auto;
+    position: relative;
+    line-height: 1.6;
+  }
+
+  .panel {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 16px 20px;
+    background: #f4ede1;
+    color: #14100a;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    text-decoration: none;
+  }
+  .action-btn:hover {
+    background: #c9a45c;
+    color: #14100a;
+    transform: translateY(-1px);
+  }
+  .action-btn:active {
+    transform: translateY(0);
+  }
+  .action-btn.primary {
+    background: #c9a45c;
+    color: #14100a;
+    font-weight: 600;
+  }
+  .action-btn.primary:hover {
+    background: #d8b976;
+  }
+  .action-btn .icon {
+    font-size: 14px;
+  }
+
+  /* Modal de estructura robusta */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    z-index: 99999;
+    inset: 0;
+    background: rgba(10,8,6,0.72);
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  .modal-box {
+    background: #f4ede1;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid rgba(201,164,92,0.35);
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-box .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(20,16,10,0.08);
+    background: #f4ede1;
+  }
+  .modal-box .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: #14100a;
+  }
+  .close-modal {
+    background: rgba(20,16,10,0.06);
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 17px;
+    color: #14100a;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .close-modal:hover {
+    background: rgba(20,16,10,0.12);
+  }
+  .modal-box iframe {
+    width: 100%;
+    height: 70vh;
+    border: none;
+    display: block;
+    background: #f4ede1;
+    overflow: auto;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 0 24px 40px;
+    font-size: 12.5px;
+    color: rgba(244,237,225,0.45);
+  }
+  .footer .rule {
+    width: 64px;
+    height: 1px;
+    background: rgba(201,164,92,0.2);
+    margin: 0 auto 24px;
+  }
+  .footer a {
+    color: #c9a45c;
+    text-decoration: none;
+  }
+  .footer a:hover {
+    text-decoration: underline;
+  }
+  .footer .sep {
+    margin: 0 8px;
+    color: rgba(244,237,225,0.25);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .action-btn { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="crest"><img src="crest.png" alt="Crest"></div>
+    <div class="brand">El Álbum B</div>
+  </div>
+
+  <div class="hero">
+    <div class="eyebrow"></div>
+    <h1>Área privada</h1>
+    <div class="rule"></div>
+    <p>Gestiona tu registro, tus datos y tu espacio de trabajo desde un mismo lugar.</p>
+  </div>
+
+  <div class="panel">
+    <button class="action-btn" type="button" onclick="abrirModal('modalDatos')"><span class="icon">&#9998;</span> Modificar datos</button>
+    <button class="action-btn" type="button" onclick="abrirModal('modalConfigAPI')"><span class="icon">&#9998;</span> Configurar API de Gemini</button>
+    <button class="action-btn" type="button" onclick="abrirModal('modalconfigSTRIPE')"><span class="icon">&#9998;</span> Configurar pagos</button>
+    <button class="action-btn" type="button" onclick="abrirModal('modaladaptWEB')"><span class="icon">&#9888;</span> Guía adaptar Web</button>
+    <a class="action-btn" href="https://sites.google.com/" target="_blank" rel="noopener noreferrer"><span class="icon">&#9998;</span> Modificar mi página web (Google Sites)</a>
+  </div>
+
+  <div class="footer">
+    <div class="rule"></div>
+    <p>&copy; 2026 El Álbum B &middot; Hecho con &#128420; para rescatar tus momentos
+      <span class="sep">&middot;</span>
+      <a href="https://forms.gle/wfkaC1bEZyYW6Lwd7" target="_blank" rel="noopener noreferrer">Contacto</a>
+      <span class="sep">&middot;</span>
+      <a href="https://www.elalbumb.com/aviso-legal" target="_blank" rel="noopener noreferrer">Aviso legal</a>
+    </p>
+  </div>
+
+  <!-- Modal: Modificar datos (Apps Script) -->
+  <div id="modalDatos" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">Modificar datos</span>
+        <button class="close-modal" type="button" onclick="cerrarModal('modalDatos')">&times;</button>
+      </div>
+      <iframe src="https://script.google.com/macros/s/AKfycbxYg_3R_VmNOfrYpKDJv0bA7884ZZ7B1jWMrd1wRj5BNpwOLEIox2PauFCgtSsiCqU_sQ/exec" scrolling="no"></iframe>
+    </div>
+  </div>
+
+  <!-- Modal: Configuración API GEMINI (Apps Script) -->
+  <div id="modalConfigAPI" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">Guía de Costes y API de Gemini</span>
+        <button class="close-modal" type="button" onclick="cerrarModal('modalConfigAPI')">&times;</button>
+      </div>
+      <iframe src="https://script.google.com/macros/s/AKfycbxYg_3R_VmNOfrYpKDJv0bA7884ZZ7B1jWMrd1wRj5BNpwOLEIox2PauFCgtSsiCqU_sQ/exec?page=configAPI" scrolling="yes"></iframe>
+    </div>
+  </div>
+
+  <!-- Modal: Configuración STRIPE (Apps Script) -->
+  <div id="modalconfigSTRIPE" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">Configurar pagos</span>
+        <button class="close-modal" type="button" onclick="cerrarModal('modalconfigSTRIPE')">&times;</button>
+      </div>
+      <iframe src="https://script.google.com/macros/s/AKfycbxYg_3R_VmNOfrYpKDJv0bA7884ZZ7B1jWMrd1wRj5BNpwOLEIox2PauFCgtSsiCqU_sQ/exec?page=configurarSTRIPE" scrolling="yes"></iframe>
+    </div>
+  </div>
+   
+  <!-- Modal: Adaptar Web (Apps Script) -->
+  <div id="modaladaptWEB" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">Guía adaptar Web</span>
+        <button class="close-modal" type="button" onclick="cerrarModal('modaladaptWEB')">&times;</button>
+      </div>
+      <iframe src="https://script.google.com/macros/s/AKfycbxYg_3R_VmNOfrYpKDJv0bA7884ZZ7B1jWMrd1wRj5BNpwOLEIox2PauFCgtSsiCqU_sQ/exec?page=adaptarWEB" scrolling="yes"></iframe>
+    </div>
+  </div>
+
+  <script>
+    function abrirModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    
+    function cerrarModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+      }
+    }
+
+    document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+          overlay.style.display = 'none';
+          document.body.style.overflow = 'auto';
+        }
+      });
+    });
+
+    // Cierre global con la tecla Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+          overlay.style.display = 'none';
+        });
+        document.body.style.overflow = 'auto';
+      }
+    });
+  </script>
+
+</body>
+</html>
